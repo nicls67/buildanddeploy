@@ -3,6 +3,22 @@ import subprocess
 
 
 def execute_stages(stages: list, disp_output: bool = False) -> (bool, str):
+    """
+    Executes a series of stages by running their associated commands. Each stage consists
+    of a name and a command. The function navigates to the 'git' directory, processes each
+    stage, executes the command for it, and optionally displays the output of the command
+    based on the disp_output flag. If any stage command fails, the function stops execution
+    and returns a failure status with an error message; otherwise, it indicates successful
+    completion of all stages.
+
+    :param stages: A list of dictionaries where each dictionary represents a stage. Each stage
+        should include a 'name' key (string) for the stage name and a 'command' key (string)
+        for the corresponding command to be executed.
+    :param disp_output: A boolean flag to determine whether the output of each command should
+        be displayed. Defaults to False.
+    :return: A tuple where the first element is a boolean indicating success (True) or failure
+        (False) and the second element is a string message describing the result.
+    """
     if stages is None or len(stages) == 0:
         return True, "No stage to execute"
 

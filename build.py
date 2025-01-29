@@ -10,11 +10,15 @@ from version import BUILD_AND_DEPLOY_VER
 
 def display_help():
     """
-    Display the usage instructions for the build script.
+    Displays help information for the BuildAndDeploy tool.
 
-    This function prints a help message outlining the purpose of the script,
-    the expected arguments, and their descriptions. It is displayed when
-    the user supplies `-h` or `--help` as an argument.
+    This function provides functionality to output instructions on how to use
+    the BuildAndDeploy tool, including its version, purpose, usage, and supported
+    arguments. It is designed to assist users by providing a detailed explanation
+    of the tool's utility and its required or optional arguments.
+
+    :rtype: None
+    :return: Does not return any value.
     """
     print("BuildAndDeploy version " + BUILD_AND_DEPLOY_VER + '\n')
     print(
@@ -29,6 +33,8 @@ def display_help():
 ######################################
 ## Beginning of the script build.py ##
 ######################################
+
+print()
 
 # Check supplied argument is a valid directory
 if len(sys.argv) == 2:
@@ -62,9 +68,19 @@ build_config = yaml.load(open("config.yaml"), Loader=yaml.SafeLoader)
 if not os.path.isdir('git'):
     os.mkdir('git')
     print('Cloning repository ' + build_config['git_repository'].split('/')[-1] + '...')
-    Repo.clone_from(build_config['git_repository'], 'git')
+    git_repo = Repo.clone_from(build_config['git_repository'], 'git')
 else:
-    print('Repository already exists. Skipping clone.')
+    print('Git repository already exists. Skipping clone.')
+    git_repo = Repo('git')
+    # Check if existing repository matches the configured one
+    if git_repo.remotes.origin.url != build_config['git_repository']:
+        print('Error: Existing repository does not match the configured one.')
+        sys.exit(-1)
+    else:
+        print('Updating repository ' + git_repo.remotes.origin.url + '...')
+        git_repo.remotes.origin.fetch()
+        git_repo.git.reset('--hard', 'origin/master')
+        git_repo.remotes.origin.pull()
 
 # Execute build stages
 result = execute_stages(build_config['stages'], build_config['display_pipeline_output'])
