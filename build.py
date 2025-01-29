@@ -1,10 +1,10 @@
 import os
 import sys
 
-import yaml
 from git import Repo
 
-from build.stages import execute_stages
+from libs.config import Config
+from libs.stages import execute_stages
 from version import BUILD_AND_DEPLOY_VER
 
 
@@ -54,26 +54,19 @@ else:
 # Go inside working directory
 os.chdir(working_dir)
 
-# Check if config.yaml exists in the current directory
-if os.path.isfile("config.yaml"):
-    print('Config file "config.yaml" found in the current directory.')
-else:
-    print('Error: Config file "config.yaml" is missing in the current directory.')
-    sys.exit(-1)
-
-# Open YAML file
-build_config = yaml.load(open("config.yaml"), Loader=yaml.SafeLoader)
+# Get build configuration
+build_config = Config()
 
 # Clone Git repository
 if not os.path.isdir('git'):
     os.mkdir('git')
-    print('Cloning repository ' + build_config['git_repository'].split('/')[-1] + '...')
-    git_repo = Repo.clone_from(build_config['git_repository'], 'git')
+    print('Cloning repository ' + build_config.global_config['git_repository'].split('/')[-1] + '...')
+    git_repo = Repo.clone_from(build_config.global_config['git_repository'], 'git')
 else:
     print('Git repository already exists. Skipping clone.')
     git_repo = Repo('git')
     # Check if existing repository matches the configured one
-    if git_repo.remotes.origin.url != build_config['git_repository']:
+    if git_repo.remotes.origin.url != build_config.global_config['git_repository']:
         print('Error: Existing repository does not match the configured one.')
         sys.exit(-1)
     else:
@@ -83,5 +76,5 @@ else:
         git_repo.remotes.origin.pull()
 
 # Execute build stages
-result = execute_stages(build_config['stages'], build_config['display_pipeline_output'])
+result = execute_stages(build_config.stages, build_config.global_config['display_pipeline_output'])
 print('\n' + result[1])

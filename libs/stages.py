@@ -33,6 +33,7 @@ def execute_stages(stages: list, disp_output: bool = False) -> (bool, str):
                                     stderr=subprocess.PIPE)
             if disp_output:
                 print(result.stdout)
+                print(result.stderr)
         except subprocess.CalledProcessError as e:
             return False, f"Error executing stage {stage['name']}:\n{e.stderr}"
 
