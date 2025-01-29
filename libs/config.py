@@ -48,9 +48,10 @@ class Config:
     misconfigured, the program exits with an error. The class loads the configuration
     details into attributes for further use within the program.
 
-    :ivar global_config: Stores the validated global configuration parameters.
-    :ivar stages: Stores the validated per-stage configuration parameters.
-        It holds a list of configurations, one for each stage.
+    :ivar global_config (`dict`): A dictionary containing validated global configuration
+              parameters loaded from the `config.yaml` file.
+    :ivar stages (`list`): A list of dictionaries for each stage, with their configuration
+              parameters validated against mandatory requirements.
     """
     _GLOBAL_CONFIGURATION_PARAMS = [('git_repository', True), ('display_pipeline_output', False, False)]
     _STAGES_CONFIGURATION_PARAMS = [('name', True), ('command', True)]
@@ -59,12 +60,6 @@ class Config:
         """
         Initializes and validates application configuration by loading it from a YAML file,
         ensuring that mandatory global and stage parameters are present.
-
-        Attributes:
-            - global_config (`dict`): A dictionary containing validated global configuration
-              parameters loaded from the `config.yaml` file.
-            - stages (`list`): A list of dictionaries for each stage, with their configuration
-              parameters validated against mandatory requirements.
 
         Config file requirements:
             - The `config.yaml` file must be present in the current directory. Absence of
