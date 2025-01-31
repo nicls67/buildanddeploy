@@ -1,0 +1,3 @@
+# Rust build template
+name: build
+command: cargo build

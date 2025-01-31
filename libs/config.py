@@ -87,7 +87,22 @@ class Config:
         if 'stages' in base_config:
             self.stages = []
             for stage in base_config['stages']:
-                self.stages.append(_check_params_in_config(self._STAGES_CONFIGURATION_PARAMS, stage))
+                # If a template shall be used, do not analyse remaining parameters
+                if 'use_template' in stage:
+                    template_file = stage['use_template']
+                    template_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'templates')
+                    template_full_file = os.path.join(template_dir, template_file + '.yaml')
+                    if os.path.isfile(template_full_file):
+                        print('Using template "' + template_file + '" for stage "' + '".')
+
+                        # Open template file
+                        template_config = yaml.load(open(template_full_file), Loader=yaml.SafeLoader)
+                        self.stages.append(_check_params_in_config(self._STAGES_CONFIGURATION_PARAMS, template_config))
+                    else:
+                        print('Error: Template "' + template_file + '" doesn\'t exist in the templates directory.')
+                        sys.exit(-1)
+                else:
+                    self.stages.append(_check_params_in_config(self._STAGES_CONFIGURATION_PARAMS, stage))
         else:
             print('Error: Config file "config.yaml" doesn\'t contain the mandatory parameter "stages".')
             sys.exit(-1)
