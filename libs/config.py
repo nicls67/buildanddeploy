@@ -37,6 +37,10 @@ def _check_params_in_config(params, base_config):
     return config
 
 
+_USE_TEMPLATE_MARKER = 'use_template'
+_GIT_REPOSITORY_MARKER = 'git_repository'
+
+
 class Config:
     """
     Handles the loading and validation of configuration from a YAML file.
@@ -53,7 +57,7 @@ class Config:
     :ivar stages (`list`): A list of dictionaries for each stage, with their configuration
               parameters validated against mandatory requirements.
     """
-    _GLOBAL_CONFIGURATION_PARAMS = [('git_repository', True), ('display_pipeline_output', False, False)]
+    _GLOBAL_CONFIGURATION_PARAMS = [(_GIT_REPOSITORY_MARKER, True), ('display_pipeline_output', False, False)]
     _STAGES_CONFIGURATION_PARAMS = [('name', True), ('command', True)]
 
     def __init__(self):
@@ -80,6 +84,26 @@ class Config:
         # Load configuration from YAML file
         base_config = yaml.load(open("config.yaml"), Loader=yaml.SafeLoader)
 
+        # If a template shall be used, do not analyse remaining parameters
+        # Replace local configuration with template, only git repository is added from local config
+        if _USE_TEMPLATE_MARKER in base_config:
+            template_file = base_config[_USE_TEMPLATE_MARKER]
+            template_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'templates')
+            template_full_file = os.path.join(template_dir, template_file + '.yaml')
+            if os.path.isfile(template_full_file):
+                print('Using template "' + template_file + '" for global configuration.')
+                # Get Git repo from local config
+                if _GIT_REPOSITORY_MARKER in base_config:
+                    git_repo = base_config[_GIT_REPOSITORY_MARKER]
+                else:
+                    print(
+                        'Error: Config file "config.yaml" doesn\'t contain the mandatory parameter "' + _GIT_REPOSITORY_MARKER + '".')
+                    sys.exit(-1)
+
+                # Replace local config with templace
+                base_config = yaml.load(open(template_full_file), Loader=yaml.SafeLoader)
+                base_config[_GIT_REPOSITORY_MARKER] = git_repo
+
         # Analyse global configuration : check for each existing parameter if it is configured
         self.global_config = _check_params_in_config(self._GLOBAL_CONFIGURATION_PARAMS, base_config)
 
@@ -88,12 +112,12 @@ class Config:
             self.stages = []
             for stage in base_config['stages']:
                 # If a template shall be used, do not analyse remaining parameters
-                if 'use_template' in stage:
-                    template_file = stage['use_template']
+                if _USE_TEMPLATE_MARKER in stage:
+                    template_file = stage[_USE_TEMPLATE_MARKER]
                     template_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'templates')
                     template_full_file = os.path.join(template_dir, template_file + '.yaml')
                     if os.path.isfile(template_full_file):
-                        print('Using template "' + template_file + '" for stage "' + '".')
+                        print('Using template "' + template_file + '" for stage')
 
                         # Open template file
                         template_config = yaml.load(open(template_full_file), Loader=yaml.SafeLoader)

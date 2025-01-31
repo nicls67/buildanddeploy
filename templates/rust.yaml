@@ -1,0 +1,9 @@
+# Global configuration
+display_pipeline_output: false
+
+# Build stages
+stages:
+  - use_template: rust_build
+  - use_template: rust_test
+
+
