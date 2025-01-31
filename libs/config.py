@@ -62,15 +62,14 @@ class Config:
 
     def __init__(self):
         """
-        Initializes and validates application configuration by loading it from a YAML file,
-        ensuring that mandatory global and stage parameters are present.
+        Represents the configuration loader class which initializes and processes configuration
+        from a `config.yaml` file. If templates are used for global or stage-specific configuration,
+        the templates are prioritized and processed. This class ensures all necessary parameters
+        are validated and detected in the configuration.
 
-        Config file requirements:
-            - The `config.yaml` file must be present in the current directory. Absence of
-              this file will terminate execution with an error.
-            - The root of the configuration must contain mandatory global parameters and
-              a `stages` key specifying stage-specific configurations. Omission of the
-              `stages` parameter will result in termination with an error.
+        Raises:
+            SystemExit: If the `config.yaml` configuration file is missing, lacks required parameters,
+            or specific templates are unavailable, the program terminates with an error.
 
         """
         # Check if config.yaml exists in the current directory
