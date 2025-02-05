@@ -74,11 +74,25 @@ def execute_stages(stages: list, disp_output: bool = False) -> (bool, str):
                     except Exception as e:
                         print(f"Error copying artifact {artifact_path} to 'artifacts': {e}")
 
-                # Update artifact name
+                # Update artifact name, add artifact number to the name in case of multiple artifacts
                 if 'name' in stage['artifacts']:
-                    # Multiples artifacts
+                    original_name = artifact_path.split('/')[-1].split('\\')[-1]
+                    extension = original_name.split('.')[-1] if not artifact_isdir else None
                     if len(stage['artifacts']['paths']) > 1:
-                        pass
+                        new_name = stage['artifacts']['name'] + f"_{i + 1}"
+                    else:
+                        new_name = stage['artifacts']['name']
+                    if extension is not None:
+                        new_name += f".{extension}"
+
+                    try:
+                        os.rename(
+                            os.path.join('..', 'artifacts', original_name),
+                            os.path.join('..', 'artifacts', new_name)
+                        )
+                        print(f"Renamed '{original_name}' to '{new_name}'")
+                    except Exception as e:
+                        print(f"Error renaming '{original_name}' to '{new_name}': {e}")
 
         print("Stage " + stage['name'] + " executed successfully")
 

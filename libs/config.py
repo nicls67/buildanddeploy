@@ -30,8 +30,8 @@ def _check_params_in_config(params, base_config):
         elif param[1]:
             print('Error: Config file "config.yaml" doesn\'t contain the mandatory parameter "' + param[0] + '".')
             sys.exit(-1)
-        # Parameter doesn't exist and is not mandatory
-        else:
+        # Parameter doesn't exist and is not mandatory and a default value exists
+        elif len(param) > 2:
             config[param[0]] = param[2]
 
     return config
