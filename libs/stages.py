@@ -1,4 +1,6 @@
+import glob
 import os
+import shutil
 import subprocess
 
 
@@ -28,6 +30,7 @@ def execute_stages(stages: list, disp_output: bool = False) -> (bool, str):
     for stage in stages:
         print("\nExecuting stage " + stage['name'] + '...')
 
+        # Execute command
         try:
             result = subprocess.run(stage['command'], shell=True, check=True, text=True, stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE)
@@ -36,6 +39,30 @@ def execute_stages(stages: list, disp_output: bool = False) -> (bool, str):
                 print(result.stderr)
         except subprocess.CalledProcessError as e:
             return False, f"Error executing stage {stage['name']}:\n{e.stderr}"
+
+        # Artifacts
+        if 'artifacts' in stage:
+            print("Retrieving artifacts...")
+            for path in stage['artifacts']['paths']:
+                artifact_path = path
+                # Get artifact full path
+                if '*' in path:
+                    artifact_path = None
+                    matching_files = glob.glob(path, recursive=True)
+                    if len(matching_files) == 1:
+                        artifact_path = matching_files[0]
+                    elif len(matching_files) > 1:
+                        print(f"Error : Multiple artifacts found for path: {path}")
+                    else:
+                        print(f"No matching artifact found for path: {path}")
+
+                # Copy artifact
+                if artifact_path is not None:
+                    try:
+                        shutil.copy2(artifact_path, os.path.join('..', 'artifacts'))
+                        print(f"Copied artifact: {artifact_path}")
+                    except Exception as e:
+                        print(f"Error copying artifact {artifact_path} to 'artifacts': {e}")
 
         print("Stage " + stage['name'] + " executed successfully")
 

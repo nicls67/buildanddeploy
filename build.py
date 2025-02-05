@@ -75,6 +75,16 @@ else:
         git_repo.git.reset('--hard', 'origin/master')
         git_repo.remotes.origin.pull()
 
+# Create artifacts directory
+if os.path.isdir('artifacts'):
+    for root, dirs, files in os.walk('artifacts', topdown=False):
+        for file in files:
+            os.remove(os.path.join(root, file))
+        for directory in dirs:
+            os.rmdir(os.path.join(root, directory))
+    os.rmdir('artifacts')
+os.mkdir('artifacts')
+
 # Execute build stages
 result = execute_stages(build_config.stages, build_config.global_config['display_pipeline_output'])
 print('\n' + result[1])

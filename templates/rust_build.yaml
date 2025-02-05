@@ -1,3 +1,7 @@
 # Rust build template
 name: build
 command: cargo build
+artifacts:
+  name: artifact
+  paths:
+    - target/debug/*.exe

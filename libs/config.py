@@ -59,6 +59,7 @@ class Config:
     """
     _GLOBAL_CONFIGURATION_PARAMS = [(_GIT_REPOSITORY_MARKER, True), ('display_pipeline_output', False, False)]
     _STAGES_CONFIGURATION_PARAMS = [('name', True), ('command', True)]
+    _ARTIFACTS_CONFIGURATION_PARAMS = [('name', False)]
 
     def __init__(self):
         """
@@ -125,7 +126,22 @@ class Config:
                         print('Error: Template "' + template_file + '" doesn\'t exist in the templates directory.')
                         sys.exit(-1)
 
-                self.stages.append(_check_params_in_config(self._STAGES_CONFIGURATION_PARAMS, stage))
+                # Get stage configuration
+                stage_config = _check_params_in_config(self._STAGES_CONFIGURATION_PARAMS, stage)
+                if 'artifacts' in stage:
+                    # Get artifacts configuration
+                    stage_config['artifacts'] = _check_params_in_config(self._ARTIFACTS_CONFIGURATION_PARAMS,
+                                                                        stage['artifacts'])
+                    # Get paths for artifacts
+                    if 'paths' in stage['artifacts']:
+                        stage_config['artifacts']['paths'] = []
+                        for path in stage['artifacts']['paths']:
+                            stage_config['artifacts']['paths'].append(path)
+                    else:
+                        print('Error: Artifacts configuration doesn\'t contain the mandatory parameter "paths".')
+                        sys.exit(-1)
+
+                self.stages.append(stage_config)
         else:
             print('Error: Config file "config.yaml" doesn\'t contain the mandatory parameter "stages".')
             sys.exit(-1)
