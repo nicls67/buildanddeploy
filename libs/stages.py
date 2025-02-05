@@ -91,11 +91,12 @@ def execute_stages(stages: list, disp_output: bool = False) -> (bool, str):
                 else:
                     artifact_name = original_name.split('.')[0]
 
-                ###############################################################
+                ################################################################################################
                 # Rename artifact
-                #    -> Rename if a name is defined and if zip is not activated
-                ###############################################################
-                if 'name' in stage['artifacts'] and not stage['artifacts']['archive']:
+                #    -> Rename if a name is defined and if zip is not activated and if assemble is not activated
+                ################################################################################################
+                if 'name' in stage['artifacts'] and not stage['artifacts']['archive'] and not stage['artifacts'][
+                    'assemble']:
                     new_name = artifact_name
                     if extension is not None:
                         new_name += f".{extension}"
@@ -109,10 +110,11 @@ def execute_stages(stages: list, disp_output: bool = False) -> (bool, str):
                     except Exception as e:
                         print(f"   Error renaming '{original_name}' to '{new_name}': {e}")
 
-                ##################
+                ####################################################################
                 # Archive artifact
-                ##################
-                if stage['artifacts']['archive']:
+                #   -> Archive if archive is activated and assemble is not activated
+                ####################################################################
+                if stage['artifacts']['archive'] and not stage['artifacts']['assemble']:
                     try:
                         if artifact_isdir:
                             shutil.make_archive(os.path.join('..', 'artifacts', artifact_name),
@@ -123,11 +125,26 @@ def execute_stages(stages: list, disp_output: bool = False) -> (bool, str):
                             os.mkdir(temp_dir)
                             shutil.move(os.path.join('..', 'artifacts', original_name), temp_dir)
                             shutil.make_archive(temp_dir,
-                                                'zip', os.path.join('..', 'artifacts'), artifact_name)
+                                                'zip', os.path.join('..', 'artifacts', artifact_name))
                             shutil.rmtree(temp_dir)
                         print(f"   Created archive '{artifact_name}.zip'")
                     except Exception as e:
                         print(f"   Error creating archive: {e}")
+
+            ####################
+            # Assemble artifacts
+            ####################
+            if stage['artifacts']['assemble']:
+                archive_name = stage['artifacts']['name'] if 'name' in stage['artifacts'] else 'artifacts'
+                try:
+                    shutil.make_archive(os.path.join('..', archive_name),
+                                        'zip', os.path.join('..', 'artifacts'))
+                    shutil.rmtree(os.path.join('..', 'artifacts'))
+                    os.mkdir(os.path.join('..', 'artifacts'))
+                    shutil.move(os.path.join('..', archive_name + '.zip'), os.path.join('..', 'artifacts'))
+                    print(f"   Created archive '{archive_name}.zip'")
+                except Exception as e:
+                    print(f"   Error creating archive: {e}")
 
         print("Stage " + stage['name'] + " executed successfully")
 

@@ -2,6 +2,8 @@
 name: build
 command: cargo build
 artifacts:
-  name: artifact
+  name: rust_artifact
+  archive: true
+  assemble: true
   paths:
     - target/debug/*.exe
