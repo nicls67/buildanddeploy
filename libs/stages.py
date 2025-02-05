@@ -43,7 +43,7 @@ def execute_stages(stages: list, disp_output: bool = False) -> (bool, str):
         # Artifacts
         if 'artifacts' in stage:
             print("Retrieving artifacts...")
-            for path in stage['artifacts']['paths']:
+            for i, path in enumerate(stage['artifacts']['paths']):
                 artifact_path = path
                 # Get artifact full path
                 if '*' in path:
@@ -56,13 +56,29 @@ def execute_stages(stages: list, disp_output: bool = False) -> (bool, str):
                     else:
                         print(f"No matching artifact found for path: {path}")
 
+                # Check if artifact is a file or a folder
+                if os.path.isdir(artifact_path):
+                    artifact_isdir = True
+                else:
+                    artifact_isdir = False
+
                 # Copy artifact
                 if artifact_path is not None:
                     try:
-                        shutil.copy2(artifact_path, os.path.join('..', 'artifacts'))
+                        if artifact_isdir:
+                            shutil.copytree(artifact_path, os.path.join('..', 'artifacts',
+                                                                        artifact_path.split('/')[-1].split('\\')[-1]))
+                        else:
+                            shutil.copy2(artifact_path, os.path.join('..', 'artifacts'))
                         print(f"Copied artifact: {artifact_path}")
                     except Exception as e:
                         print(f"Error copying artifact {artifact_path} to 'artifacts': {e}")
+
+                # Update artifact name
+                if 'name' in stage['artifacts']:
+                    # Multiples artifacts
+                    if len(stage['artifacts']['paths']) > 1:
+                        pass
 
         print("Stage " + stage['name'] + " executed successfully")
 
