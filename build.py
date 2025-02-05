@@ -1,4 +1,5 @@
 import os
+import shutil
 import sys
 
 from git import Repo
@@ -77,12 +78,7 @@ else:
 
 # Create artifacts directory
 if os.path.isdir('artifacts'):
-    for root, dirs, files in os.walk('artifacts', topdown=False):
-        for file in files:
-            os.remove(os.path.join(root, file))
-        for directory in dirs:
-            os.rmdir(os.path.join(root, directory))
-    os.rmdir('artifacts')
+    shutil.rmtree('artifacts')
 os.mkdir('artifacts')
 
 # Execute build stages

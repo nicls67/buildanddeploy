@@ -40,9 +40,11 @@ def execute_stages(stages: list, disp_output: bool = False) -> (bool, str):
         except subprocess.CalledProcessError as e:
             return False, f"Error executing stage {stage['name']}:\n{e.stderr}"
 
+        ###########
         # Artifacts
+        ###########
         if 'artifacts' in stage:
-            print("Retrieving artifacts...")
+            print("   Retrieving artifacts...")
             for i, path in enumerate(stage['artifacts']['paths']):
                 artifact_path = path
                 # Get artifact full path
@@ -52,9 +54,9 @@ def execute_stages(stages: list, disp_output: bool = False) -> (bool, str):
                     if len(matching_files) == 1:
                         artifact_path = matching_files[0]
                     elif len(matching_files) > 1:
-                        print(f"Error : Multiple artifacts found for path: {path}")
+                        print(f"   Error : Multiple artifacts found for path: {path}")
                     else:
-                        print(f"No matching artifact found for path: {path}")
+                        print(f"   No matching artifact found for path: {path}")
 
                 # Check if artifact is a file or a folder
                 if os.path.isdir(artifact_path):
@@ -62,7 +64,9 @@ def execute_stages(stages: list, disp_output: bool = False) -> (bool, str):
                 else:
                     artifact_isdir = False
 
+                ###############
                 # Copy artifact
+                ###############
                 if artifact_path is not None:
                     try:
                         if artifact_isdir:
@@ -70,18 +74,29 @@ def execute_stages(stages: list, disp_output: bool = False) -> (bool, str):
                                                                         artifact_path.split('/')[-1].split('\\')[-1]))
                         else:
                             shutil.copy2(artifact_path, os.path.join('..', 'artifacts'))
-                        print(f"Copied artifact: {artifact_path}")
+                        print(f"   Copied artifact: {artifact_path}")
                     except Exception as e:
-                        print(f"Error copying artifact {artifact_path} to 'artifacts': {e}")
+                        print(f"   Error copying artifact {artifact_path} to 'artifacts': {e}")
 
-                # Update artifact name, add artifact number to the name in case of multiple artifacts
+                ###################################################
+                # Compute file and directories names for next steps
+                ###################################################
+                original_name = artifact_path.split('/')[-1].split('\\')[-1]
+                extension = original_name.split('.')[-1] if not artifact_isdir else None
                 if 'name' in stage['artifacts']:
-                    original_name = artifact_path.split('/')[-1].split('\\')[-1]
-                    extension = original_name.split('.')[-1] if not artifact_isdir else None
                     if len(stage['artifacts']['paths']) > 1:
-                        new_name = stage['artifacts']['name'] + f"_{i + 1}"
+                        artifact_name = stage['artifacts']['name'] + f"_{i + 1}"
                     else:
-                        new_name = stage['artifacts']['name']
+                        artifact_name = stage['artifacts']['name']
+                else:
+                    artifact_name = original_name.split('.')[0]
+
+                ###############################################################
+                # Rename artifact
+                #    -> Rename if a name is defined and if zip is not activated
+                ###############################################################
+                if 'name' in stage['artifacts'] and not stage['artifacts']['archive']:
+                    new_name = artifact_name
                     if extension is not None:
                         new_name += f".{extension}"
 
@@ -90,9 +105,29 @@ def execute_stages(stages: list, disp_output: bool = False) -> (bool, str):
                             os.path.join('..', 'artifacts', original_name),
                             os.path.join('..', 'artifacts', new_name)
                         )
-                        print(f"Renamed '{original_name}' to '{new_name}'")
+                        print(f"   Renamed '{original_name}' to '{new_name}'")
                     except Exception as e:
-                        print(f"Error renaming '{original_name}' to '{new_name}': {e}")
+                        print(f"   Error renaming '{original_name}' to '{new_name}': {e}")
+
+                ##################
+                # Archive artifact
+                ##################
+                if stage['artifacts']['archive']:
+                    try:
+                        if artifact_isdir:
+                            shutil.make_archive(os.path.join('..', 'artifacts', artifact_name),
+                                                'zip', os.path.join('..', 'artifacts'), original_name)
+                            shutil.rmtree(os.path.join('..', 'artifacts', original_name))
+                        else:
+                            temp_dir = os.path.join('..', 'artifacts', artifact_name)
+                            os.mkdir(temp_dir)
+                            shutil.move(os.path.join('..', 'artifacts', original_name), temp_dir)
+                            shutil.make_archive(temp_dir,
+                                                'zip', os.path.join('..', 'artifacts'), artifact_name)
+                            shutil.rmtree(temp_dir)
+                        print(f"   Created archive '{artifact_name}.zip'")
+                    except Exception as e:
+                        print(f"   Error creating archive: {e}")
 
         print("Stage " + stage['name'] + " executed successfully")
 
