@@ -84,6 +84,16 @@ class Config:
         # Load configuration from YAML file
         base_config = yaml.load(open("config.yaml"), Loader=yaml.SafeLoader)
 
+        # Retrieve environment variables
+        if 'project_vars' in base_config and base_config['project_vars']:
+            print('Retrieving environment variables...')
+            self.env_vars = []
+            for var in base_config['project_vars']:
+                self.env_vars.append(tuple(var.items())[0])
+            print(self.env_vars)
+        else:
+            print('No environment variables to retrieve.')
+
         # If a template shall be used, do not analyse remaining parameters
         # Replace local configuration with template, only git repository is added from local config
         if _USE_TEMPLATE_MARKER in base_config:
