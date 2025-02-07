@@ -84,3 +84,6 @@ os.mkdir('artifacts')
 # Execute build stages
 result = execute_stages(build_config.stages, build_config.global_config['display_pipeline_output'])
 print('\n' + result[1])
+
+# Exit script
+sys.exit(-1 if not result[0] else 0)
