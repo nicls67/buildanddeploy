@@ -54,9 +54,9 @@ def execute_stages(stages: list, disp_output: bool = False) -> (bool, str):
                     if len(matching_files) == 1:
                         artifact_path = matching_files[0]
                     elif len(matching_files) > 1:
-                        print(f"   Error : Multiple artifacts found for path: {path}")
+                        return False, f"   Error : Multiple artifacts found for path: {path}"
                     else:
-                        print(f"   No matching artifact found for path: {path}")
+                        return False, f"   Error : No artifact found for path: {path}"
 
                 # Check if artifact is a file or a folder
                 if os.path.isdir(artifact_path):
@@ -76,7 +76,7 @@ def execute_stages(stages: list, disp_output: bool = False) -> (bool, str):
                             shutil.copy2(artifact_path, os.path.join('..', 'artifacts'))
                         print(f"   Copied artifact: {artifact_path}")
                     except Exception as e:
-                        print(f"   Error copying artifact {artifact_path} to 'artifacts': {e}")
+                        return False, f"   Error copying artifact {artifact_path} to 'artifacts': {e}"
 
                 ###################################################
                 # Compute file and directories names for next steps
@@ -108,7 +108,7 @@ def execute_stages(stages: list, disp_output: bool = False) -> (bool, str):
                         )
                         print(f"   Renamed '{original_name}' to '{new_name}'")
                     except Exception as e:
-                        print(f"   Error renaming '{original_name}' to '{new_name}': {e}")
+                        return False, f"   Error renaming '{original_name}' to '{new_name}': {e}"
 
                 ####################################################################
                 # Archive artifact
@@ -129,7 +129,7 @@ def execute_stages(stages: list, disp_output: bool = False) -> (bool, str):
                             shutil.rmtree(temp_dir)
                         print(f"   Created archive '{artifact_name}.zip'")
                     except Exception as e:
-                        print(f"   Error creating archive: {e}")
+                        return False, f"   Error creating archive: {e}"
 
             ####################
             # Assemble artifacts
@@ -144,7 +144,7 @@ def execute_stages(stages: list, disp_output: bool = False) -> (bool, str):
                     shutil.move(os.path.join('..', archive_name + '.zip'), os.path.join('..', 'artifacts'))
                     print(f"   Created archive '{archive_name}.zip'")
                 except Exception as e:
-                    print(f"   Error creating archive: {e}")
+                    return False, f"   Error creating archive: {e}"
 
         print("Stage " + stage['name'] + " executed successfully")
 
