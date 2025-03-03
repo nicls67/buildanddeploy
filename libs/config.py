@@ -37,34 +37,66 @@ def _check_params_in_config(params, base_config):
     return config
 
 
-def _replace_param_by_env_var(base_config: dict[str, any], env_vars: dict):
+def _replace_param_by_env_var_in_str(base_str: str, env_vars: dict):
     """
-    Replace placeholders in the base configuration dictionary with corresponding environment
-    variables from the provided dictionary. The placeholders in the base configuration must
-    follow the format `${ENV_VAR_NAME}`. If an environment variable referenced in the base
-    configuration is not found in the `env_vars` dictionary, the program will print an
-    error message and terminate.
+    Replace placeholders in a string with corresponding environment variable values.
 
-    :param base_config: A dictionary representing the base configuration, with values
-        containing placeholders for environment variables in the format `${ENV_VAR_NAME}`.
-    :type base_config: dict[str, any]
-    :param env_vars: A dictionary containing the mappings of environment variable names
-        (keys) to their respective values (strings).
+    This function checks if a given string contains placeholders for environment
+    variables in the format "${VAR_NAME}". If such a placeholder is found, it replaces
+    it with the value of the corresponding key from the provided dictionary of
+    environment variables. If the environment variable is not found in the dictionary,
+    an error is printed, and the program terminates with a non-zero exit code.
+
+    :param base_str: Input string that may contain environment variable placeholders in the
+        format "${VAR_NAME}". If no placeholder is detected, the original string is
+        returned unchanged.
+    :type base_str: str
+    :param env_vars: Dictionary of environment variables, where the keys represent variable
+        names and values represent the corresponding environment variable's value.
+        Used to resolve the placeholders in the input string.
     :type env_vars: dict
+    :return: The input string with placeholders replaced by their corresponding environment
+        variable values if any placeholders are present; the original string otherwise.
+    :rtype: str
 
-    :return: A dictionary where placeholders in the base configuration keys are replaced
-        with actual values from the environment variables dictionary.
+    :raises SystemExit: If a placeholder's referenced environment variable is not found
+        in the dictionary, the program terminates and prints an error message to stderr.
+    """
+    if '$' in base_str:
+        env_var = base_str.split('{')[1].split('}')[0]
+        if env_var in env_vars:
+            return base_str.replace('${' + env_var + '}', env_vars[env_var])
+        else:
+            print('Error: Environment variable "' + env_var + '" is not defined.')
+            sys.exit(-1)
+    else:
+        return base_str
+
+
+def _replace_param_by_env_var_in_dict(base_config: dict[str, any], env_vars: dict):
+    """
+    Replaces parameters in a dictionary with environment variable values if applicable.
+
+    This function iterates through a given configuration dictionary and checks if any
+    string-type value can be replaced by a corresponding value from the provided
+    environment variables dictionary. If the value is not a string or no replacement
+    is required, it retains the original value. The resulting updated dictionary
+    is returned.
+
+    :param base_config: The base configuration dictionary whose values may need
+        replacement with environment variable values.
+    :type base_config: dict[str, any]
+    :param env_vars: A dictionary of environment variables used for potential
+        replacement of values in the base configuration.
+    :type env_vars: dict
+    :return: A new dictionary with updated values, where applicable, by replacing
+        the relevant strings with the corresponding environment variable values.
     :rtype: dict
     """
     config = {}
     for key in base_config:
-        if isinstance(base_config[key], str) and '$' in base_config[key]:
-            env_var = base_config[key].split('{')[1].split('}')[0]
-            if env_var in env_vars:
-                config[key] = base_config[key].replace('${' + env_var + '}', env_vars[env_var])
-            else:
-                print('Error: Environment variable "' + env_var + '" is not defined.')
-                sys.exit(-1)
+        if isinstance(base_config[key], str):
+            config[key] = _replace_param_by_env_var_in_str(base_config[key], env_vars)
         else:
             config[key] = base_config[key]
     return config
@@ -96,15 +128,21 @@ class Config:
 
     def __init__(self):
         """
-        Represents the configuration loader class which initializes and processes configuration
-        from a `config.yaml` file. If templates are used for global or stage-specific configuration,
-        the templates are prioritized and processed. This class ensures all necessary parameters
-        are validated and detected in the configuration.
+        Initializes the configuration for a project based on the provided YAML configuration
+        file, environment variables, and optional templates. The class processes global
+        parameters, stage configurations, and artifact paths, ensuring all mandatory
+        fields are provided and supporting replacement of parameters using environment
+        variables.
 
-        Raises:
-            SystemExit: If the `config.yaml` configuration file is missing, lacks required parameters,
-            or specific templates are unavailable, the program terminates with an error.
+        Raises an error and exits the program if critical configurations or files are
+        missing. Supports the use of pre-defined templates to replace large sections of
+        the configuration.
 
+        Raises
+        ------
+        SystemExit
+            If the configuration file or required parameters are missing, or if templates
+            or artifacts are misconfigured.
         """
         # Check if config.yaml exists in the current directory
         self.stages = None
@@ -154,7 +192,7 @@ class Config:
         # Analyse global configuration : check for each existing parameter if it is configured
         self.global_config = _check_params_in_config(self._GLOBAL_CONFIGURATION_PARAMS, base_config)
         # Environment variables replacement
-        self.global_config = _replace_param_by_env_var(self.global_config, self.env_vars)
+        self.global_config = _replace_param_by_env_var_in_dict(self.global_config, self.env_vars)
 
         # Analyse stages configuration
         if 'stages' in base_config:
@@ -175,20 +213,23 @@ class Config:
                         print('Error: Template "' + template_file + '" doesn\'t exist in the templates directory.')
                         sys.exit(-1)
 
-                # Check stage configuration
+                # Check stage configuration and environment variables replacement
                 stage_config = _check_params_in_config(self._STAGES_CONFIGURATION_PARAMS, stage)
-                stage_config = _replace_param_by_env_var(stage_config, self.env_vars)
+                stage_config = _replace_param_by_env_var_in_dict(stage_config, self.env_vars)
+
                 if 'artifacts' in stage:
-                    # Get artifacts configuration
+                    # Get artifacts configuration and environment variables replacement
                     stage_config['artifacts'] = _check_params_in_config(self._ARTIFACTS_CONFIGURATION_PARAMS,
                                                                         stage['artifacts'])
-                    stage_config['artifacts'] = _replace_param_by_env_var(stage_config['artifacts'], self.env_vars)
+                    stage_config['artifacts'] = _replace_param_by_env_var_in_dict(stage_config['artifacts'],
+                                                                                  self.env_vars)
 
                     # Get paths for artifacts
                     if 'paths' in stage['artifacts']:
                         stage_config['artifacts']['paths'] = []
                         for path in stage['artifacts']['paths']:
-                            stage_config['artifacts']['paths'].append(path)
+                            stage_config['artifacts']['paths'].append(
+                                _replace_param_by_env_var_in_str(path, self.env_vars))
                     else:
                         print('Error: Artifacts configuration doesn\'t contain the mandatory parameter "paths".')
                         sys.exit(-1)

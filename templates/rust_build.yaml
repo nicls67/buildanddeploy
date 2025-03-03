@@ -6,4 +6,4 @@ artifacts:
   archive: true
   assemble: true
   paths:
-    - target/debug/*.exe
+    - target/debug/${project_name}.exe
