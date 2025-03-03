@@ -37,6 +37,39 @@ def _check_params_in_config(params, base_config):
     return config
 
 
+def _replace_param_by_env_var(base_config: dict[str, any], env_vars: dict):
+    """
+    Replace placeholders in the base configuration dictionary with corresponding environment
+    variables from the provided dictionary. The placeholders in the base configuration must
+    follow the format `${ENV_VAR_NAME}`. If an environment variable referenced in the base
+    configuration is not found in the `env_vars` dictionary, the program will print an
+    error message and terminate.
+
+    :param base_config: A dictionary representing the base configuration, with values
+        containing placeholders for environment variables in the format `${ENV_VAR_NAME}`.
+    :type base_config: dict[str, any]
+    :param env_vars: A dictionary containing the mappings of environment variable names
+        (keys) to their respective values (strings).
+    :type env_vars: dict
+
+    :return: A dictionary where placeholders in the base configuration keys are replaced
+        with actual values from the environment variables dictionary.
+    :rtype: dict
+    """
+    config = {}
+    for key in base_config:
+        if isinstance(base_config[key], str) and '$' in base_config[key]:
+            env_var = base_config[key].split('{')[1].split('}')[0]
+            if env_var in env_vars:
+                config[key] = base_config[key].replace('${' + env_var + '}', env_vars[env_var])
+            else:
+                print('Error: Environment variable "' + env_var + '" is not defined.')
+                sys.exit(-1)
+        else:
+            config[key] = base_config[key]
+    return config
+
+
 _USE_TEMPLATE_MARKER = 'use_template'
 _GIT_REPOSITORY_MARKER = 'git_repository'
 
@@ -87,10 +120,14 @@ class Config:
         # Retrieve environment variables
         if 'project_vars' in base_config and base_config['project_vars']:
             print('Retrieving environment variables...')
-            self.env_vars = []
+            self.env_vars = {}
             for var in base_config['project_vars']:
-                self.env_vars.append(tuple(var.items())[0])
-            print(self.env_vars)
+                # Check only one key is defined for each environment variable
+                if len(var.keys()) != 1:
+                    print('Error: Each item in "project_vars" must contain exactly one key.')
+                    sys.exit(-1)
+                key, value = var.popitem()
+                self.env_vars[key] = value
         else:
             print('No environment variables to retrieve.')
 
@@ -110,12 +147,14 @@ class Config:
                         'Error: Config file "config.yaml" doesn\'t contain the mandatory parameter "' + _GIT_REPOSITORY_MARKER + '".')
                     sys.exit(-1)
 
-                # Replace local config with templace
+                # Replace local config with template
                 base_config = yaml.load(open(template_full_file), Loader=yaml.SafeLoader)
                 base_config[_GIT_REPOSITORY_MARKER] = git_repo
 
         # Analyse global configuration : check for each existing parameter if it is configured
         self.global_config = _check_params_in_config(self._GLOBAL_CONFIGURATION_PARAMS, base_config)
+        # Environment variables replacement
+        self.global_config = _replace_param_by_env_var(self.global_config, self.env_vars)
 
         # Analyse stages configuration
         if 'stages' in base_config:
@@ -136,12 +175,15 @@ class Config:
                         print('Error: Template "' + template_file + '" doesn\'t exist in the templates directory.')
                         sys.exit(-1)
 
-                # Get stage configuration
+                # Check stage configuration
                 stage_config = _check_params_in_config(self._STAGES_CONFIGURATION_PARAMS, stage)
+                stage_config = _replace_param_by_env_var(stage_config, self.env_vars)
                 if 'artifacts' in stage:
                     # Get artifacts configuration
                     stage_config['artifacts'] = _check_params_in_config(self._ARTIFACTS_CONFIGURATION_PARAMS,
                                                                         stage['artifacts'])
+                    stage_config['artifacts'] = _replace_param_by_env_var(stage_config['artifacts'], self.env_vars)
+
                     # Get paths for artifacts
                     if 'paths' in stage['artifacts']:
                         stage_config['artifacts']['paths'] = []

@@ -2,7 +2,7 @@
 name: build
 command: cargo build
 artifacts:
-  name: rust_artifact
+  name: ${project_name}
   archive: true
   assemble: true
   paths:
