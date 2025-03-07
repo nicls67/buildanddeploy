@@ -5,5 +5,6 @@ artifacts:
   name: ${project_name}
   archive: true
   assemble: true
+  enabled: true
   paths:
     - target/debug/${project_name}.exe

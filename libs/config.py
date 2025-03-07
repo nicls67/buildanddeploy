@@ -122,9 +122,11 @@ class Config:
     :ivar stages (`list`): A list of dictionaries for each stage, with their configuration
               parameters validated against mandatory requirements.
     """
-    _GLOBAL_CONFIGURATION_PARAMS = [(_GIT_REPOSITORY_MARKER, True), ('display_pipeline_output', False, False)]
+    _GLOBAL_CONFIGURATION_PARAMS = [(_GIT_REPOSITORY_MARKER, True), ('display_pipeline_output', False, False),
+                                    ('generate_artifacts', False, False), ('disable_artifacts', False, False)]
     _STAGES_CONFIGURATION_PARAMS = [('name', True), ('command', True)]
-    _ARTIFACTS_CONFIGURATION_PARAMS = [('name', False), ('archive', False, False), ('assemble', False, False)]
+    _ARTIFACTS_CONFIGURATION_PARAMS = [('name', False), ('archive', False, False), ('assemble', False, False),
+                                       ('enabled', False, True)]
 
     def __init__(self):
         """
