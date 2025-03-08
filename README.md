@@ -23,7 +23,12 @@ Working directory must contain a ``config.yaml`` file with build configuration.
 The following parameters shall be provided inside the configuration :
 
 * ``git_repository`` (string): the url the git repository you want to build
-* ``display_pipeline_output`` (boolean, optional): Shows all pipeline output
+* ``display_pipeline_output`` (boolean, optional): Shows all pipeline output (`false` by default)
+* ``generate_artifacts`` (boolean, optional): Activates artifacts generation (`true` by default). If `true`, all
+  artifacts will be generated, no matter what is configured inside the states
+* ``disable_artifacts`` (boolean, optional): Disables all artifacts generation (`false` by default). if `true`, no
+  artifact will be generated, no matter what is configured inside the states. ``generate_artifacts`` has priority over
+  this setting.
 * ``stages``: A list of build stages to execute, each stage containing the following parameters :
     * ``name`` (string): name of the stage
     * ``command`` (string): command to execute to build the stage
@@ -68,11 +73,15 @@ Each stage may produce artifacts. `BuildAndDeploy` can retrieve them and archive
 management, add the `artifacts` parameter inside a stage configuration.
 `artifacts` item shall be correctly configured :
 
-* ``name`` (string, optional): name of the artifact file produced by `BuildAndDeploy`
+* ``name`` (string, optional): name of the artifact file produced by `BuildAndDeploy`. If not provided, original
+  artifact name will be kept
 * ``paths`` (list of strings, mandatory): list of paths to artifacts to retrieve. Use `*` for wildcard in paths. Paths
   can be either a file or a directory
-* ``archive`` (boolean, optional): archive the artifacts into a zip file
-* ``assemble`` (boolean, optional): in case multiple paths are defined, assemble the artifacts into a single archive
+* ``archive`` (boolean, optional): archive the artifacts into a zip file (`false` by default)
+* ``assemble`` (boolean, optional): in case multiple paths are defined, assemble the artifacts into a single archive (
+  `false` by default)
+* ``enabled`` (boolean, optional): enables artifact generation (`true` by default). Can be overwritten by global
+  configuration.
 
 Example for `rust build` stage :
 

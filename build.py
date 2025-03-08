@@ -81,8 +81,16 @@ if os.path.isdir('artifacts'):
     shutil.rmtree('artifacts')
 os.mkdir('artifacts')
 
+# Check global artifacts activation
+if build_config.global_config['generate_artifacts']:
+    enable_artifacts = True
+elif build_config.global_config['disable_artifacts']:
+    enable_artifacts = False
+else:
+    enable_artifacts = None
+
 # Execute build stages
-result = execute_stages(build_config.stages, build_config.global_config['display_pipeline_output'])
+result = execute_stages(build_config.stages, enable_artifacts, build_config.global_config['display_pipeline_output'])
 print('\n' + result[1])
 
 # Exit script
