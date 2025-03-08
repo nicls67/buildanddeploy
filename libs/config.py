@@ -171,8 +171,7 @@ class Config:
         else:
             print('No environment variables to retrieve.')
 
-        # If a template shall be used, do not analyse remaining parameters
-        # Replace local configuration with template, only git repository is added from local config
+        # Replace local configuration with template, except for git repository and artifacts generation
         if _USE_TEMPLATE_MARKER in base_config:
             template_file = base_config[_USE_TEMPLATE_MARKER]
             template_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'templates')
