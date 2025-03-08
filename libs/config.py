@@ -123,7 +123,8 @@ class Config:
               parameters validated against mandatory requirements.
     """
     _GLOBAL_CONFIGURATION_PARAMS = [(_GIT_REPOSITORY_MARKER, True), ('display_pipeline_output', False, False),
-                                    ('generate_artifacts', False, False), ('disable_artifacts', False, False)]
+                                    ('generate_artifacts', False, False), ('disable_artifacts', False, False),
+                                    ('continue_on_failure', False, False)]
     _STAGES_CONFIGURATION_PARAMS = [('name', True), ('command', True)]
     _ARTIFACTS_CONFIGURATION_PARAMS = [('name', False), ('archive', False, False), ('assemble', False, False),
                                        ('enabled', False, True)]

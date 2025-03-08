@@ -4,7 +4,8 @@ import shutil
 import subprocess
 
 
-def execute_stages(stages: list, artifacts_enabled: bool | None, disp_output: bool = False) -> (bool, str):
+def execute_stages(stages: list, artifacts_enabled: bool | None, continue_if_fail: bool, disp_output: bool = False) -> (
+        bool, str):
     """
     Executes a list of pipeline stages, handles their artifacts, and provides execution results.
 
@@ -22,6 +23,9 @@ def execute_stages(stages: list, artifacts_enabled: bool | None, disp_output: bo
     :param artifacts_enabled: A boolean or None flag that overrides whether artifacts are
        processed or not. If None, the 'artifacts.enabled' property in each stage determines the value.
     :type artifacts_enabled: bool | None
+
+    :param continue_if_fail: A boolean flag that allows to continue stages execution if previous stage failed.
+    :type continue_if_fail: bool
 
     :param disp_output: A boolean flag indicating whether to display the output (stdout and stderr)
        of the executed commands. Default is False.
@@ -49,7 +53,11 @@ def execute_stages(stages: list, artifacts_enabled: bool | None, disp_output: bo
                 print(result.stdout)
                 print(result.stderr)
         except subprocess.CalledProcessError as e:
-            return False, f"Error executing stage {stage['name']}:\n{e.stderr}"
+            if continue_if_fail:
+                print(f"Error executing stage {stage['name']}:\n{e.stderr}")
+                continue
+            else:
+                return False, f"Error executing stage {stage['name']}:\n{e.stderr}"
 
         ###########
         # Artifacts

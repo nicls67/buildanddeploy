@@ -90,7 +90,8 @@ else:
     enable_artifacts = None
 
 # Execute build stages
-result = execute_stages(build_config.stages, enable_artifacts, build_config.global_config['display_pipeline_output'])
+result = execute_stages(build_config.stages, enable_artifacts, build_config.global_config['continue_on_failure'],
+                        build_config.global_config['display_pipeline_output'])
 print('\n' + result[1])
 
 # Exit script
