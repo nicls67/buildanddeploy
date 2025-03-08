@@ -104,6 +104,7 @@ def _replace_param_by_env_var_in_dict(base_config: dict[str, any], env_vars: dic
 
 _USE_TEMPLATE_MARKER = 'use_template'
 _GIT_REPOSITORY_MARKER = 'git_repository'
+_PROJECT_VARS_MARKER = 'project_vars'
 
 
 class Config:
@@ -159,13 +160,13 @@ class Config:
         base_config = yaml.load(open("config.yaml"), Loader=yaml.SafeLoader)
 
         # Retrieve environment variables
-        if 'project_vars' in base_config and base_config['project_vars']:
+        if _PROJECT_VARS_MARKER in base_config and base_config[_PROJECT_VARS_MARKER]:
             print('Retrieving environment variables...')
             self.env_vars = {}
-            for var in base_config['project_vars']:
+            for var in base_config[_PROJECT_VARS_MARKER]:
                 # Check only one key is defined for each environment variable
                 if len(var.keys()) != 1:
-                    print('Error: Each item in "project_vars" must contain exactly one key.')
+                    print('Error: Each item in "' + _PROJECT_VARS_MARKER + '" must contain exactly one key.')
                     sys.exit(-1)
                 key, value = var.popitem()
                 self.env_vars[key] = value
@@ -179,17 +180,18 @@ class Config:
             template_full_file = os.path.join(template_dir, template_file + '.yaml')
             if os.path.isfile(template_full_file):
                 print('Using template "' + template_file + '" for global configuration.')
-                # Get Git repo from local config
-                if _GIT_REPOSITORY_MARKER in base_config:
-                    git_repo = base_config[_GIT_REPOSITORY_MARKER]
-                else:
-                    print(
-                        'Error: Config file "config.yaml" doesn\'t contain the mandatory parameter "' + _GIT_REPOSITORY_MARKER + '".')
-                    sys.exit(-1)
 
-                # Replace local config with template
-                base_config = yaml.load(open(template_full_file), Loader=yaml.SafeLoader)
-                base_config[_GIT_REPOSITORY_MARKER] = git_repo
+                # Get template configuration
+                template_config = yaml.load(open(template_full_file), Loader=yaml.SafeLoader)
+                # Add keys from project config into template
+                for key in base_config:
+                    if key not in [_PROJECT_VARS_MARKER, _USE_TEMPLATE_MARKER]:
+                        template_config[key] = base_config[key]
+
+                base_config = template_config
+            else:
+                print('Error: Template "' + template_file + '" doesn\'t exist in the templates directory.')
+                sys.exit(-1)
 
         # Analyse global configuration : check for each existing parameter if it is configured
         self.global_config = _check_params_in_config(self._GLOBAL_CONFIGURATION_PARAMS, base_config)
