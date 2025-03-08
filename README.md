@@ -29,6 +29,8 @@ The following parameters shall be provided inside the configuration :
 * ``disable_artifacts`` (boolean, optional): Disables all artifacts generation (`false` by default). if `true`, no
   artifact will be generated, no matter what is configured inside the states. ``generate_artifacts`` has priority over
   this setting.
+* ``continue_on_failure`` (boolean, optional): Allow to continue next stages execution if previous stage fails (`false`
+  by default)
 * ``stages``: A list of build stages to execute, each stage containing the following parameters :
     * ``name`` (string): name of the stage
     * ``command`` (string): command to execute to build the stage
