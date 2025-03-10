@@ -70,7 +70,6 @@ def execute_stages(stages: list, artifacts_enabled: bool | None, continue_if_fai
                     artifact_path = path
                     # Get artifact full path
                     if '*' in path:
-                        artifact_path = None
                         matching_files = glob.glob(path, recursive=True)
                         if len(matching_files) == 1:
                             artifact_path = matching_files[0]
