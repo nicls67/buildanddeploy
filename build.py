@@ -4,6 +4,7 @@ import sys
 
 from git import Repo
 
+import libs.constants as constants
 from libs.config import Config
 from libs.stages import execute_stages
 from version import BUILD_AND_DEPLOY_VER
@@ -59,15 +60,15 @@ os.chdir(working_dir)
 build_config = Config()
 
 # Clone Git repository
-if not os.path.isdir('git'):
-    os.mkdir('git')
-    print('Cloning repository ' + build_config.global_config['git_repository'].split('/')[-1] + '...')
-    git_repo = Repo.clone_from(build_config.global_config['git_repository'], 'git')
+if not os.path.isdir(constants.GIT):
+    os.mkdir(constants.GIT)
+    print('Cloning repository ' + build_config.global_config[constants.GIT_REPOSITORY].split('/')[-1] + '...')
+    git_repo = Repo.clone_from(build_config.global_config[constants.GIT_REPOSITORY], constants.GIT)
 else:
     print('Git repository already exists. Skipping clone.')
-    git_repo = Repo('git')
+    git_repo = Repo(constants.GIT)
     # Check if existing repository matches the configured one
-    if git_repo.remotes.origin.url != build_config.global_config['git_repository']:
+    if git_repo.remotes.origin.url != build_config.global_config[constants.GIT_REPOSITORY]:
         print('Error: Existing repository does not match the configured one.')
         sys.exit(-1)
     else:
@@ -77,21 +78,22 @@ else:
         git_repo.remotes.origin.pull()
 
 # Create artifacts directory
-if os.path.isdir('artifacts'):
-    shutil.rmtree('artifacts')
-os.mkdir('artifacts')
+if os.path.isdir(constants.ARTIFACTS):
+    shutil.rmtree(constants.ARTIFACTS)
+os.mkdir(constants.ARTIFACTS)
 
 # Check global artifacts activation
-if build_config.global_config['generate_artifacts']:
+if build_config.global_config[constants.GENERATE_ARTIFACTS]:
     enable_artifacts = True
-elif build_config.global_config['disable_artifacts']:
+elif build_config.global_config[constants.DISABLE_ARTIFACTS]:
     enable_artifacts = False
 else:
     enable_artifacts = None
 
 # Execute build stages
-result = execute_stages(build_config.stages, enable_artifacts, build_config.global_config['continue_on_failure'],
-                        build_config.global_config['display_pipeline_output'])
+result = execute_stages(build_config.stages, enable_artifacts,
+                        build_config.global_config[constants.CONTINUE_ON_FAILURE],
+                        build_config.global_config[constants.DISPLAY_PIPELINE_OUTPUT])
 print('\n' + result[1])
 
 # Exit script

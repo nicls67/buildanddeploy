@@ -3,6 +3,8 @@ import sys
 
 import yaml
 
+import libs.constants as constants
+
 
 def _check_params_in_config(params, base_config):
     """
@@ -102,11 +104,6 @@ def _replace_param_by_env_var_in_dict(base_config: dict[str, any], env_vars: dic
     return config
 
 
-_USE_TEMPLATE_MARKER = 'use_template'
-_GIT_REPOSITORY_MARKER = 'git_repository'
-_PROJECT_VARS_MARKER = 'project_vars'
-
-
 class Config:
     """
     Handles the loading and validation of configuration from a YAML file.
@@ -123,12 +120,14 @@ class Config:
     :ivar stages (`list`): A list of dictionaries for each stage, with their configuration
               parameters validated against mandatory requirements.
     """
-    _GLOBAL_CONFIGURATION_PARAMS = [(_GIT_REPOSITORY_MARKER, True), ('display_pipeline_output', False, False),
-                                    ('generate_artifacts', False, False), ('disable_artifacts', False, False),
-                                    ('continue_on_failure', False, False)]
-    _STAGES_CONFIGURATION_PARAMS = [('name', True), ('command', True)]
-    _ARTIFACTS_CONFIGURATION_PARAMS = [('name', False), ('archive', False, False), ('assemble', False, False),
-                                       ('enabled', False, True)]
+    _GLOBAL_CONFIGURATION_PARAMS = [(constants.GIT_REPOSITORY, True), (constants.DISPLAY_PIPELINE_OUTPUT, False, False),
+                                    (constants.GENERATE_ARTIFACTS, False, False),
+                                    (constants.DISABLE_ARTIFACTS, False, False),
+                                    (constants.CONTINUE_ON_FAILURE, False, False)]
+    _STAGES_CONFIGURATION_PARAMS = [(constants.NAME, True), (constants.COMMAND, True)]
+    _ARTIFACTS_CONFIGURATION_PARAMS = [(constants.NAME, False), (constants.ARCHIVE, False, False),
+                                       (constants.ASSEMBLE, False, False),
+                                       (constants.ENABLED, False, True)]
 
     def __init__(self):
         """
@@ -150,23 +149,23 @@ class Config:
         """
         # Check if config.yaml exists in the current directory
         self.stages = None
-        if os.path.isfile("config.yaml"):
-            print('Config file "config.yaml" found in the current directory.')
+        if os.path.isfile(constants.CONFILE_FILE_NAME):
+            print('Config file ' + constants.CONFILE_FILE_NAME + ' found in the current directory.')
         else:
-            print('Error: Config file "config.yaml" is missing in the current directory.')
+            print('Error: Config file ' + constants.CONFILE_FILE_NAME + ' is missing in the current directory.')
             sys.exit(-1)
 
         # Load configuration from YAML file
-        base_config = yaml.load(open("config.yaml"), Loader=yaml.SafeLoader)
+        base_config = yaml.load(open(constants.CONFILE_FILE_NAME), Loader=yaml.SafeLoader)
 
         # Retrieve environment variables
-        if _PROJECT_VARS_MARKER in base_config and base_config[_PROJECT_VARS_MARKER]:
+        if constants.PROJECT_VARS in base_config and base_config[constants.PROJECT_VARS]:
             print('Retrieving environment variables...')
             self.env_vars = {}
-            for var in base_config[_PROJECT_VARS_MARKER]:
+            for var in base_config[constants.PROJECT_VARS]:
                 # Check only one key is defined for each environment variable
                 if len(var.keys()) != 1:
-                    print('Error: Each item in "' + _PROJECT_VARS_MARKER + '" must contain exactly one key.')
+                    print('Error: Each item in "' + constants.PROJECT_VARS + '" must contain exactly one key.')
                     sys.exit(-1)
                 key, value = var.popitem()
                 self.env_vars[key] = value
@@ -174,10 +173,10 @@ class Config:
             print('No environment variables to retrieve.')
 
         # Replace local configuration with template, except for git repository and artifacts generation
-        if _USE_TEMPLATE_MARKER in base_config:
-            template_file = base_config[_USE_TEMPLATE_MARKER]
-            template_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'templates')
-            template_full_file = os.path.join(template_dir, template_file + '.yaml')
+        if constants.USE_TEMPLATE in base_config:
+            template_file = base_config[constants.USE_TEMPLATE]
+            template_full_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..',
+                                              constants.TEMPLATES_DIR, template_file + '.yaml')
             if os.path.isfile(template_full_file):
                 print('Using template "' + template_file + '" for global configuration.')
 
@@ -185,7 +184,7 @@ class Config:
                 template_config = yaml.load(open(template_full_file), Loader=yaml.SafeLoader)
                 # Add keys from project config into template
                 for key in base_config:
-                    if key not in [_PROJECT_VARS_MARKER, _USE_TEMPLATE_MARKER]:
+                    if key not in [constants.PROJECT_VARS, constants.USE_TEMPLATE]:
                         template_config[key] = base_config[key]
 
                 base_config = template_config
@@ -199,15 +198,15 @@ class Config:
         self.global_config = _replace_param_by_env_var_in_dict(self.global_config, self.env_vars)
 
         # Analyse stages configuration
-        if 'stages' in base_config:
+        if constants.STAGES in base_config:
             self.stages = []
-            for stage in base_config['stages']:
+            for stage in base_config[constants.STAGES]:
                 # If a template shall be used, do not analyse remaining parameters
                 # Replace local configuration with template
-                if _USE_TEMPLATE_MARKER in stage:
-                    template_file = stage[_USE_TEMPLATE_MARKER]
-                    template_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'templates')
-                    template_full_file = os.path.join(template_dir, template_file + '.yaml')
+                if constants.USE_TEMPLATE in stage:
+                    template_file = stage[constants.USE_TEMPLATE]
+                    template_full_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..',
+                                                      constants.TEMPLATES_DIR, template_file + '.yaml')
                     if os.path.isfile(template_full_file):
                         print('Using template "' + template_file + '" for stage')
 
@@ -221,24 +220,27 @@ class Config:
                 stage_config = _check_params_in_config(self._STAGES_CONFIGURATION_PARAMS, stage)
                 stage_config = _replace_param_by_env_var_in_dict(stage_config, self.env_vars)
 
-                if 'artifacts' in stage:
+                if constants.ARTIFACTS in stage:
                     # Get artifacts configuration and environment variables replacement
-                    stage_config['artifacts'] = _check_params_in_config(self._ARTIFACTS_CONFIGURATION_PARAMS,
-                                                                        stage['artifacts'])
-                    stage_config['artifacts'] = _replace_param_by_env_var_in_dict(stage_config['artifacts'],
-                                                                                  self.env_vars)
+                    stage_config[constants.ARTIFACTS] = _check_params_in_config(self._ARTIFACTS_CONFIGURATION_PARAMS,
+                                                                                stage[constants.ARTIFACTS])
+                    stage_config[constants.ARTIFACTS] = _replace_param_by_env_var_in_dict(
+                        stage_config[constants.ARTIFACTS],
+                        self.env_vars)
 
                     # Get paths for artifacts
-                    if 'paths' in stage['artifacts']:
-                        stage_config['artifacts']['paths'] = []
-                        for path in stage['artifacts']['paths']:
-                            stage_config['artifacts']['paths'].append(
+                    if constants.PATHS in stage[constants.ARTIFACTS]:
+                        stage_config[constants.ARTIFACTS][constants.PATHS] = []
+                        for path in stage[constants.ARTIFACTS][constants.PATHS]:
+                            stage_config[constants.ARTIFACTS][constants.PATHS].append(
                                 _replace_param_by_env_var_in_str(path, self.env_vars))
                     else:
-                        print('Error: Artifacts configuration doesn\'t contain the mandatory parameter "paths".')
+                        print(
+                            'Error: Artifacts configuration doesn\'t contain the mandatory parameter "' + constants.PATHS + '".')
                         sys.exit(-1)
 
                 self.stages.append(stage_config)
         else:
-            print('Error: Config file "config.yaml" doesn\'t contain the mandatory parameter "stages".')
+            print(
+                'Error: Config file "config.yaml" doesn\'t contain the mandatory parameter "' + constants.STAGES + '".')
             sys.exit(-1)

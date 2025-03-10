@@ -3,6 +3,8 @@ import os
 import shutil
 import subprocess
 
+import libs.constants as constants
+
 
 def execute_stages(stages: list, artifacts_enabled: bool | None, continue_if_fail: bool, disp_output: bool = False) -> (
         bool, str):
@@ -40,33 +42,34 @@ def execute_stages(stages: list, artifacts_enabled: bool | None, continue_if_fai
         return True, "No stage to execute"
 
     # Go into git directory
-    os.chdir('git')
+    os.chdir(constants.GIT)
 
     for stage in stages:
-        print("\nExecuting stage " + stage['name'] + '...')
+        print("\nExecuting stage " + stage[constants.NAME] + '...')
 
         # Execute command
         try:
-            result = subprocess.run(stage['command'], shell=True, check=True, text=True, stdout=subprocess.PIPE,
+            result = subprocess.run(stage[constants.COMMAND], shell=True, check=True, text=True, stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE)
             if disp_output:
                 print(result.stdout)
                 print(result.stderr)
         except subprocess.CalledProcessError as e:
             if continue_if_fail:
-                print(f"Error executing stage {stage['name']}:\n{e.stderr}")
+                print(f"Error executing stage {stage[constants.NAME]}:\n{e.stderr}")
                 continue
             else:
-                return False, f"Error executing stage {stage['name']}:\n{e.stderr}"
+                return False, f"Error executing stage {stage[constants.NAME]}:\n{e.stderr}"
 
         ###########
         # Artifacts
         ###########
-        if 'artifacts' in stage:
-            process_artifacts = artifacts_enabled if artifacts_enabled is not None else stage['artifacts']['enabled']
+        if constants.ARTIFACTS in stage:
+            process_artifacts = artifacts_enabled if artifacts_enabled is not None else stage[constants.ARTIFACTS][
+                constants.ENABLED]
             if process_artifacts:
                 print("   Retrieving artifacts...")
-                for i, path in enumerate(stage['artifacts']['paths']):
+                for i, path in enumerate(stage[constants.ARTIFACTS][constants.PATHS]):
                     artifact_path = path
                     # Get artifact full path
                     if '*' in path:
@@ -90,11 +93,11 @@ def execute_stages(stages: list, artifacts_enabled: bool | None, continue_if_fai
                     if artifact_path is not None:
                         try:
                             if artifact_isdir:
-                                shutil.copytree(artifact_path, os.path.join('..', 'artifacts',
+                                shutil.copytree(artifact_path, os.path.join('..', constants.ARTIFACTS,
                                                                             artifact_path.split('/')[-1].split('\\')[
                                                                                 -1]))
                             else:
-                                shutil.copy2(artifact_path, os.path.join('..', 'artifacts'))
+                                shutil.copy2(artifact_path, os.path.join('..', constants.ARTIFACTS))
                             print(f"   Copied artifact: {artifact_path}")
                         except Exception as e:
                             return False, f"   Error copying artifact {artifact_path} to 'artifacts': {e}"
@@ -104,11 +107,11 @@ def execute_stages(stages: list, artifacts_enabled: bool | None, continue_if_fai
                     ###################################################
                     original_name = artifact_path.split('/')[-1].split('\\')[-1]
                     extension = original_name.split('.')[-1] if not artifact_isdir else None
-                    if 'name' in stage['artifacts']:
-                        if len(stage['artifacts']['paths']) > 1:
-                            artifact_name = stage['artifacts']['name'] + f"_{i + 1}"
+                    if constants.NAME in stage[constants.ARTIFACTS]:
+                        if len(stage[constants.ARTIFACTS][constants.PATHS]) > 1:
+                            artifact_name = stage[constants.ARTIFACTS][constants.NAME] + f"_{i + 1}"
                         else:
-                            artifact_name = stage['artifacts']['name']
+                            artifact_name = stage[constants.ARTIFACTS][constants.NAME]
                     else:
                         artifact_name = original_name.split('.')[0]
 
@@ -116,16 +119,17 @@ def execute_stages(stages: list, artifacts_enabled: bool | None, continue_if_fai
                     # Rename artifact
                     #    -> Rename if a name is defined and if zip is not activated and if assemble is not activated
                     ################################################################################################
-                    if 'name' in stage['artifacts'] and not stage['artifacts']['archive'] and not stage['artifacts'][
-                        'assemble']:
+                    if constants.NAME in stage[constants.ARTIFACTS] and not stage[constants.ARTIFACTS][
+                        constants.ARCHIVE] and not stage[constants.ARTIFACTS][
+                        constants.ASSEMBLE]:
                         new_name = artifact_name
                         if extension is not None:
                             new_name += f".{extension}"
 
                         try:
                             os.rename(
-                                os.path.join('..', 'artifacts', original_name),
-                                os.path.join('..', 'artifacts', new_name)
+                                os.path.join('..', constants.ARTIFACTS, original_name),
+                                os.path.join('..', constants.ARTIFACTS, new_name)
                             )
                             print(f"   Renamed '{original_name}' to '{new_name}'")
                         except Exception as e:
@@ -135,18 +139,19 @@ def execute_stages(stages: list, artifacts_enabled: bool | None, continue_if_fai
                     # Archive artifact
                     #   -> Archive if archive is activated and assemble is not activated
                     ####################################################################
-                    if stage['artifacts']['archive'] and not stage['artifacts']['assemble']:
+                    if stage[constants.ARTIFACTS][constants.ARCHIVE] and not stage[constants.ARTIFACTS][
+                        constants.ASSEMBLE]:
                         try:
                             if artifact_isdir:
-                                shutil.make_archive(os.path.join('..', 'artifacts', artifact_name),
-                                                    'zip', os.path.join('..', 'artifacts'), original_name)
-                                shutil.rmtree(os.path.join('..', 'artifacts', original_name))
+                                shutil.make_archive(os.path.join('..', constants.ARTIFACTS, artifact_name),
+                                                    'zip', os.path.join('..', constants.ARTIFACTS), original_name)
+                                shutil.rmtree(os.path.join('..', constants.ARTIFACTS, original_name))
                             else:
-                                temp_dir = os.path.join('..', 'artifacts', artifact_name)
+                                temp_dir = os.path.join('..', constants.ARTIFACTS, artifact_name)
                                 os.mkdir(temp_dir)
-                                shutil.move(os.path.join('..', 'artifacts', original_name), temp_dir)
+                                shutil.move(os.path.join('..', constants.ARTIFACTS, original_name), temp_dir)
                                 shutil.make_archive(temp_dir,
-                                                    'zip', os.path.join('..', 'artifacts', artifact_name))
+                                                    'zip', os.path.join('..', constants.ARTIFACTS, artifact_name))
                                 shutil.rmtree(temp_dir)
                             print(f"   Created archive '{artifact_name}.zip'")
                         except Exception as e:
@@ -155,14 +160,15 @@ def execute_stages(stages: list, artifacts_enabled: bool | None, continue_if_fai
                 ####################
                 # Assemble artifacts
                 ####################
-                if stage['artifacts']['assemble']:
-                    archive_name = stage['artifacts']['name'] if 'name' in stage['artifacts'] else 'artifacts'
+                if stage[constants.ARTIFACTS][constants.ASSEMBLE]:
+                    archive_name = stage[constants.ARTIFACTS][constants.NAME] if constants.NAME in stage[
+                        constants.ARTIFACTS] else constants.ARTIFACTS
                     try:
                         shutil.make_archive(os.path.join('..', archive_name),
-                                            'zip', os.path.join('..', 'artifacts'))
-                        shutil.rmtree(os.path.join('..', 'artifacts'))
-                        os.mkdir(os.path.join('..', 'artifacts'))
-                        shutil.move(os.path.join('..', archive_name + '.zip'), os.path.join('..', 'artifacts'))
+                                            'zip', os.path.join('..', constants.ARTIFACTS))
+                        shutil.rmtree(os.path.join('..', constants.ARTIFACTS))
+                        os.mkdir(os.path.join('..', constants.ARTIFACTS))
+                        shutil.move(os.path.join('..', archive_name + '.zip'), os.path.join('..', constants.ARTIFACTS))
                         print(f"   Created archive '{archive_name}.zip'")
                     except Exception as e:
                         return False, f"   Error creating archive: {e}"
@@ -170,6 +176,6 @@ def execute_stages(stages: list, artifacts_enabled: bool | None, continue_if_fai
             else:
                 print("   Skipping artifacts")
 
-        print("Stage " + stage['name'] + " executed successfully")
+        print("Stage " + stage[constants.NAME] + " executed successfully")
 
     return True, "All stages executed successfully"
