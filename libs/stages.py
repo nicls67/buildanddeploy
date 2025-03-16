@@ -2,12 +2,13 @@ import glob
 import os
 import shutil
 import subprocess
+from logging import Logger
 
 import libs.constants as constants
 
 
-def execute_stages(stages: list, artifacts_enabled: bool | None, continue_if_fail: bool, disp_output: bool = False) -> (
-        bool, str):
+def execute_stages(stages: list, artifacts_enabled: bool | None, continue_if_fail: bool, logger: Logger,
+                   disp_output: bool = False) -> bool:
     """
     Executes a list of pipeline stages, handles their artifacts, and provides execution results.
 
@@ -29,6 +30,9 @@ def execute_stages(stages: list, artifacts_enabled: bool | None, continue_if_fai
     :param continue_if_fail: A boolean flag that allows to continue stages execution if previous stage failed.
     :type continue_if_fail: bool
 
+    :param logger: A logger instance to use for logging messages.
+    :type logger: Logger
+
     :param disp_output: A boolean flag indicating whether to display the output (stdout and stderr)
        of the executed commands. Default is False.
     :type disp_output: bool
@@ -38,28 +42,33 @@ def execute_stages(stages: list, artifacts_enabled: bool | None, continue_if_fai
        additional information about the execution result.
     :rtype: tuple[bool, str]
     """
+    logger.info("")
+
     if stages is None or len(stages) == 0:
-        return True, "No stage to execute"
+        logger.warning("No stage to execute")
+        return True
 
     # Go into git directory
     os.chdir(constants.GIT)
 
     for stage in stages:
-        print("\nExecuting stage " + stage[constants.NAME] + '...')
+        logger.info("")
+        logger.info(f"Executing stage {stage[constants.NAME]}")
 
         # Execute command
         try:
             result = subprocess.run(stage[constants.COMMAND], shell=True, check=True, text=True, stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE)
             if disp_output:
-                print(result.stdout)
-                print(result.stderr)
+                logger.info("Command output:")
+                logger.info(result.stdout)
+                logger.info(result.stderr)
         except subprocess.CalledProcessError as e:
+            logger.error(f"Error executing stage {stage[constants.NAME]}:\n{e.stderr}")
             if continue_if_fail:
-                print(f"Error executing stage {stage[constants.NAME]}:\n{e.stderr}")
                 continue
             else:
-                return False, f"Error executing stage {stage[constants.NAME]}:\n{e.stderr}"
+                return False
 
         ###########
         # Artifacts
@@ -68,7 +77,7 @@ def execute_stages(stages: list, artifacts_enabled: bool | None, continue_if_fai
             process_artifacts = artifacts_enabled if artifacts_enabled is not None else stage[constants.ARTIFACTS][
                 constants.ENABLED]
             if process_artifacts:
-                print("   Retrieving artifacts...")
+                logger.info("   Retrieving artifacts...")
                 for i, path in enumerate(stage[constants.ARTIFACTS][constants.PATHS]):
                     artifact_path = path
                     # Get artifact full path
@@ -77,9 +86,11 @@ def execute_stages(stages: list, artifacts_enabled: bool | None, continue_if_fai
                         if len(matching_files) == 1:
                             artifact_path = matching_files[0]
                         elif len(matching_files) > 1:
-                            return False, f"   Error : Multiple artifacts found for path: {path}"
+                            logger.error(f"   Error : Multiple artifacts found for path: {path}")
+                            return False
                         else:
-                            return False, f"   Error : No artifact found for path: {path}"
+                            logger.error(f"   Error : No artifact found for path: {path}")
+                            return False
 
                     # Check if artifact is a file or a folder
                     if os.path.isdir(artifact_path):
@@ -98,9 +109,10 @@ def execute_stages(stages: list, artifacts_enabled: bool | None, continue_if_fai
                                                                                 -1]))
                             else:
                                 shutil.copy2(artifact_path, os.path.join('..', constants.ARTIFACTS))
-                            print(f"   Copied artifact: {artifact_path}")
+                            logger.info(f"   Copied artifact: {artifact_path}")
                         except Exception as e:
-                            return False, f"   Error copying artifact {artifact_path} to 'artifacts': {e}"
+                            logger.error(f"   Error copying artifact {artifact_path} to 'artifacts': {e}")
+                            return False
 
                     ###################################################
                     # Compute file and directories names for next steps
@@ -131,9 +143,10 @@ def execute_stages(stages: list, artifacts_enabled: bool | None, continue_if_fai
                                 os.path.join('..', constants.ARTIFACTS, original_name),
                                 os.path.join('..', constants.ARTIFACTS, new_name)
                             )
-                            print(f"   Renamed '{original_name}' to '{new_name}'")
+                            logger.info(f"   Renamed artifact '{original_name}' to '{new_name}'")
                         except Exception as e:
-                            return False, f"   Error renaming '{original_name}' to '{new_name}': {e}"
+                            logger.error(f"   Error renaming '{original_name}' to '{new_name}': {e}")
+                            return False
 
                     ####################################################################
                     # Archive artifact
@@ -153,9 +166,10 @@ def execute_stages(stages: list, artifacts_enabled: bool | None, continue_if_fai
                                 shutil.make_archive(temp_dir,
                                                     'zip', os.path.join('..', constants.ARTIFACTS, artifact_name))
                                 shutil.rmtree(temp_dir)
-                            print(f"   Created archive '{artifact_name}.zip'")
+                            logger.info(f"   Created archive '{artifact_name}.zip'")
                         except Exception as e:
-                            return False, f"   Error creating archive: {e}"
+                            logger.error(f"   Error creating archive: {e}")
+                            return False
 
                 ####################
                 # Assemble artifacts
@@ -169,13 +183,16 @@ def execute_stages(stages: list, artifacts_enabled: bool | None, continue_if_fai
                         shutil.rmtree(os.path.join('..', constants.ARTIFACTS))
                         os.mkdir(os.path.join('..', constants.ARTIFACTS))
                         shutil.move(os.path.join('..', archive_name + '.zip'), os.path.join('..', constants.ARTIFACTS))
-                        print(f"   Created archive '{archive_name}.zip'")
+                        logger.info(f"   Created archive '{archive_name}.zip'")
                     except Exception as e:
-                        return False, f"   Error creating archive: {e}"
+                        logger.error(f"   Error creating archive: {e}")
+                        return False
 
             else:
-                print("   Skipping artifacts")
+                logger.info("   Skipping artifacts generation")
 
-        print("Stage " + stage[constants.NAME] + " executed successfully")
+        logger.info("Stage " + stage[constants.NAME] + " executed successfully")
 
-    return True, "All stages executed successfully"
+    logger.info("")
+    logger.info("All stages executed successfully")
+    return True
