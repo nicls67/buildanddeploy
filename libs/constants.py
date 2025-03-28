@@ -18,3 +18,60 @@ PATHS = 'paths'
 ARCHIVE = 'archive'
 ASSEMBLE = 'assemble'
 STAGES = 'stages'
+
+CONFIGURATION_PARAMS = {
+    GIT_REPOSITORY: {
+        'mandatory': True,
+    },
+    DISPLAY_PIPELINE_OUTPUT: {
+        'mandatory': False,
+        'default': False,
+    },
+    GENERATE_ARTIFACTS: {
+        'mandatory': False,
+        'default': False,
+    },
+    DISABLE_ARTIFACTS: {
+        'mandatory': False,
+        'default': False,
+    },
+    CONTINUE_ON_FAILURE: {
+        'mandatory': False,
+        'default': False,
+    },
+    STAGES: {
+        'mandatory': True,
+        'vectored': True,
+        'sub_params': {
+            NAME: {
+                'mandatory': True,
+            },
+            COMMAND: {
+                'mandatory': True,
+            },
+            ARTIFACTS: {
+                'mandatory': False,
+                'sub_params': {
+                    NAME: {
+                        'mandatory': False,
+                    },
+                    ARCHIVE: {
+                        'mandatory': False,
+                        'default': False,
+                    },
+                    ASSEMBLE: {
+                        'mandatory': False,
+                        'default': False,
+                    },
+                    ENABLED: {
+                        'mandatory': False,
+                        'default': True,
+                    },
+                    PATHS: {
+                        'mandatory': True,
+                    }
+                }
+            }
+        }
+    },
+}
