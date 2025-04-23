@@ -6,6 +6,7 @@ from git import Repo
 
 import libs.constants as constants
 from libs.config import Config
+from libs.git import clone_repo, update_repo
 from libs.logging import configure_logging
 from libs.stages import execute_stages
 from version import BUILD_AND_DEPLOY_VER
@@ -37,7 +38,7 @@ def display_help():
 ## Beginning of the script build.py ##
 ######################################
 
-# Check supplied argument is a valid directory
+# Check the supplied arguments
 if len(sys.argv) == 2:
     if sys.argv[1] in ("-h", "--help"):
         display_help()
@@ -66,7 +67,7 @@ build_config = Config(logger)
 if not os.path.isdir(constants.GIT):
     os.mkdir(constants.GIT)
     logger.info('Cloning repository ' + build_config.config[constants.GIT_REPOSITORY].split('/')[-1] + '...')
-    git_repo = Repo.clone_from(build_config.config[constants.GIT_REPOSITORY], constants.GIT)
+    git_repo = clone_repo(build_config.config)
 else:
     logger.info('Git repository already exists. Skipping clone.')
     git_repo = Repo(constants.GIT)
@@ -74,11 +75,10 @@ else:
     if git_repo.remotes.origin.url != build_config.config[constants.GIT_REPOSITORY]:
         logger.error('Existing repository does not match the configured one.')
         sys.exit(-1)
-    else:
-        logger.info('Updating repository ' + git_repo.remotes.origin.url)
-        git_repo.remotes.origin.fetch()
-        git_repo.git.reset('--hard', 'origin/master')
-        git_repo.remotes.origin.pull()
+
+# Update Git repository
+logger.info('Updating repository ' + git_repo.remotes.origin.url)
+update_repo(git_repo, build_config.config)
 
 # Create artifacts directory
 if os.path.isdir(constants.ARTIFACTS):

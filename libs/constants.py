@@ -5,6 +5,9 @@ TEMPLATES_DIR = 'templates'
 # Constants for YAML configuration
 USE_TEMPLATE = 'use_template'
 GIT_REPOSITORY = 'git_repository'
+GIT_BRANCH = 'git_branch'
+GIT_TAG = 'git_tag'
+GIT_COMMIT = 'git_commit'
 PROJECT_VARS = 'project_vars'
 ARTIFACTS = 'artifacts'
 GENERATE_ARTIFACTS = 'generate_artifacts'
@@ -22,6 +25,16 @@ STAGES = 'stages'
 CONFIGURATION_PARAMS = {
     GIT_REPOSITORY: {
         'mandatory': True,
+    },
+    GIT_BRANCH: {
+        'mandatory': False,
+        'default': 'master',
+    },
+    GIT_TAG: {
+        'mandatory': False,
+    },
+    GIT_COMMIT: {
+        'mandatory': False,
     },
     DISPLAY_PIPELINE_OUTPUT: {
         'mandatory': False,
