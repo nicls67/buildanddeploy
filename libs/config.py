@@ -9,39 +9,52 @@ import libs.constants as constants
 
 class Config:
     """
-    Handles the loading and validation of configuration from a YAML file.
+    Handles configuration management for the application.
 
-    This class is responsible for ensuring that configuration parameters
-    are correctly specified in a `config.yaml` file existing in the current
-    directory. It verifies both global configuration parameters and per-stage
-    configuration parameters. If any required parameter is missing or
-    misconfigured, the program exits with an error. The class loads the configuration
-    details into attributes for further use within the program.
+    This class is responsible for loading, validating, and managing the application's
+    configuration from a YAML file and environment variables. It includes mechanisms
+    to check the presence of required configuration parameters, retrieve defaults where
+    missing, and process environment variables specified in the configuration. The
+    class ensures that the configuration adheres to a predefined template and terminates
+    the program in case of invalid configurations or missing mandatory parameters.
 
-    :ivar global_config (`dict`): A dictionary containing validated global configuration
-              parameters loaded from the `config.yaml` file.
-    :ivar stages (`list`): A list of dictionaries for each stage, with their configuration
-              parameters validated against mandatory requirements.
+    :ivar _logger: Logger instance used for logging informational, warning, and error
+                   messages during the configuration management process.
+    :type _logger: Logger
+    :ivar env_vars: Dictionary containing environment variables retrieved from the
+                    configuration file, mapped with their corresponding values.
+    :type env_vars: dict
+    :ivar config: Processed and validated configuration dictionary loaded from the
+                  YAML file and enhanced with defaults or updates from templates
+                  as needed.
+    :type config: dict
     """
 
     def __init__(self, logger: Logger):
         """
-        Initializes an instance by validating and loading configuration using a YAML file. Configuration
-        includes environment variables, global parameters, and stage-specific settings. Supports the ability
-        to use templates for both global and stage-specific configurations. Raises errors and exits the
-        application if mandatory parameters or configuration files are missing or improperly structured.
+        Initializes the configuration and environment variables necessary for the application.
 
-        :param logger: Logger instance used for logging diagnostic and error information.
+        This class constructor validates the presence of a YAML configuration file in the
+        current directory, loads the configuration, retrieves environment variables, and
+        ensures the overall integrity of the resulting configuration.
+
+        :param logger: Logger instance used to log informational and error messages during
+                       the initialization process.
         :type logger: Logger
 
-        :raises SystemExit: Exits with non-zero status if critical configuration files or mandatory
-                            parameters are missing. Additionally, exits if improperly structured
-                            environment variables or templates are encountered.
+        :raises SystemExit: If the configuration file is not found or if there is an issue
+                            with the configuration structure such as missing keys or invalid
+                            environment variable definitions.
+
+        :attributes:
+            - env_vars (dict): A dictionary containing the retrieved environment variables
+                               with their respective values.
+            - config (dict): The processed configuration data after validation and checks.
+
         """
         self._logger = logger
 
         # Check if config.yaml exists in the current directory
-        self.stages = None
         if os.path.isfile(constants.CONFILE_FILE_NAME):
             logger.info('Config file ' + constants.CONFILE_FILE_NAME + ' found in the current directory.')
         else:
@@ -72,7 +85,21 @@ class Config:
         logger.info('')
 
     def _configuration_check(self, config_template: dict, config: dict) -> dict:
-        # Check all parameters in config exist in template
+        """
+        Validates and processes the configuration dictionary based on the provided configuration template.
+        This function ensures that all parameters in the configuration are valid, retrieves default values
+        for missing parameters where applicable, and extracts corresponding parameter values from the
+        template. If strict validation fails, the program will terminate with an error message.
+
+        :param config_template: The configuration template dict containing details about valid parameters,
+                                their default values, mandatory status, and any specific rules required
+                                for processing.
+        :param config: The input configuration dict that needs to be validated and possibly enhanced
+                       with template defaults or additional processing.
+        :return: A dictionary representing the processed and validated configuration derived from the
+                 template and input configuration.
+        """
+        # Check all parameters in config exist in the template
         for param in config:
             if param not in config_template and param != constants.PROJECT_VARS and param != constants.USE_TEMPLATE:
                 self._logger.error(
@@ -110,13 +137,45 @@ class Config:
         return new_config
 
     def _extract_param_from_config(self, template: dict, data, param_name: str):
+        """
+        Extracts a parameter value from a configuration template based on the specified parameter name.
+
+        The function operates by checking if the given parameter name exists in the provided
+        template and whether it contains sub-parameters. If sub-parameters are present, a specific
+        configuration check method is called. Otherwise, the data is returned as-is.
+
+        :param template: The configuration template in dictionary format that contains the
+            parameter definition.
+        :type template: dict
+        :param data: The data object or value associated with the parameter to be processed.
+            The precise nature of the data depends on the expected structure of the template.
+        :param param_name: The name of the parameter to extract from the configuration template.
+        :type param_name: str
+        :return: Either the processed result of performing a configuration check on sub-parameters
+            or the provided data itself if no sub-parameter check is necessary.
+        """
         if 'sub_params' in template[param_name]:
             return self._configuration_check(template[param_name]['sub_params'], data)
         else:
-            return data
+            new_data = self._replace_param_by_env_var_in_str(data)
+            return new_data
 
     def _add_params_from_template(self, config):
-        # Replace local configuration with template, except for git repository and artifacts generation
+        """
+        Adds parameters from a specified template file to the configuration if the template is
+        enabled in the given configuration dictionary.
+
+        This function checks if a configuration template is specified in the provided configuration
+        dictionary. If a valid template file is found, it merges the template configurations with the
+        existing configurations while giving precedence to the keys in the user-provided configuration.
+        If the specified template file does not exist, the function logs an error and exits the program.
+
+        :param config: Configuration dictionary for the current process. The dictionary may optionally include
+            a key indicating the use of a configuration template.
+        :type config: dict
+        :return: Updated configuration dictionary with parameters from the specified template (if applicable).
+        :rtype: dict
+        """
         if constants.USE_TEMPLATE in config:
             template_file = config[constants.USE_TEMPLATE]
             template_full_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..',
@@ -128,7 +187,7 @@ class Config:
                 with open(template_full_file, 'r') as file:
                     template_config = yaml.load(file, Loader=yaml.SafeLoader)
 
-                # Add keys from project config into template
+                # Add keys from project config into the template
                 for key in config:
                     if key not in [constants.PROJECT_VARS, constants.USE_TEMPLATE]:
                         template_config[key] = config[key]
@@ -143,30 +202,20 @@ class Config:
 
     def _replace_param_by_env_var_in_str(self, base_str: str):
         """
-        Replace placeholders in a string with corresponding environment variable values.
+        Replaces placeholders for environment variables in the input string with their
+        corresponding values from the `self.env_vars` dictionary. Placeholders are
+        defined in the format `${VAR_NAME}`. If the referenced variable is not defined
+        in the environment variables dictionary, it logs an error and terminates the
+        program.
 
-        This function checks if a given string contains placeholders for environment
-        variables in the format "${VAR_NAME}". If such a placeholder is found, it replaces
-        it with the value of the corresponding key from the provided dictionary of
-        environment variables. If the environment variable is not found in the dictionary,
-        an error is printed, and the program terminates with a non-zero exit code.
-
-        :param base_str: Input string that may contain environment variable placeholders in the
-            format "${VAR_NAME}". If no placeholder is detected, the original string is
-            returned unchanged.
+        :param base_str: Input string that may contain placeholders in the format
+            `${VAR_NAME}` for substitution with environment variable values.
         :type base_str: str
-        :param env_vars: Dictionary of environment variables, where the keys represent variable
-            names and values represent the corresponding environment variable's value.
-            Used to resolve the placeholders in the input string.
-        :type env_vars: dict
-        :return: The input string with placeholders replaced by their corresponding environment
-            variable values if any placeholders are present; the original string otherwise.
+        :return: String with environment variable placeholders replaced by their
+            corresponding values, or the original string if there are no placeholders.
         :rtype: str
-
-        :raises SystemExit: If a placeholder's referenced environment variable is not found
-            in the dictionary, the program terminates and prints an error message to stderr.
         """
-        if '$' in base_str:
+        if isinstance(base_str, str) and '$' in base_str:
             env_var = base_str.split('{')[1].split('}')[0]
             if env_var in self.env_vars:
                 return base_str.replace('${' + env_var + '}', self.env_vars[env_var])
@@ -176,12 +225,3 @@ class Config:
                 sys.exit(-1)
         else:
             return base_str
-
-    def _replace_param_by_env_var_in_dict(self, base_config: dict[str, any]):
-        config = {}
-        for key in base_config:
-            if isinstance(base_config[key], str):
-                config[key] = self._replace_param_by_env_var_in_str(base_config[key])
-            else:
-                config[key] = base_config[key]
-        return config

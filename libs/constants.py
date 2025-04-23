@@ -69,6 +69,7 @@ CONFIGURATION_PARAMS = {
                     },
                     PATHS: {
                         'mandatory': True,
+                        'vectored': True,
                     }
                 }
             }
