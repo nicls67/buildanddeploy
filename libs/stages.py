@@ -27,7 +27,7 @@ def execute_stages(stages: list, artifacts_enabled: bool | None, continue_if_fai
        processed or not. If None, the 'artifacts.enabled' property in each stage determines the value.
     :type artifacts_enabled: bool | None
 
-    :param continue_if_fail: A boolean flag that allows to continue stages execution if previous stage failed.
+    :param continue_if_fail: A boolean flag that allows continuing stages execution if the previous stage failed.
     :type continue_if_fail: bool
 
     :param logger: A logger instance to use for logging messages.
@@ -38,7 +38,7 @@ def execute_stages(stages: list, artifacts_enabled: bool | None, continue_if_fai
     :type disp_output: bool
 
     :return: A two-element tuple where the first value is a boolean indicating success status
-       (True for success, False for failure) and the second value is a string message providing
+       (True for success, False for failure), and the second value is a string message providing
        additional information about the execution result.
     :rtype: tuple[bool, str]
     """
@@ -48,7 +48,7 @@ def execute_stages(stages: list, artifacts_enabled: bool | None, continue_if_fai
         logger.warning("No stage to execute")
         return True
 
-    # Go into git directory
+    # Go into the git directory
     os.chdir(constants.GIT)
 
     for stage in stages:
