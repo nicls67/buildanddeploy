@@ -1,6 +1,7 @@
 # Rust build template
 name: build
-command: cargo build
+commands: cargo build
+
 artifacts:
   name: ${project_name}
   archive: true

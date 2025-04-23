@@ -55,20 +55,23 @@ def execute_stages(stages: list, artifacts_enabled: bool | None, continue_if_fai
         logger.info("")
         logger.info(f"Executing stage {stage[constants.NAME]}")
 
-        # Execute command
-        try:
-            result = subprocess.run(stage[constants.COMMAND], shell=True, check=True, text=True, stdout=subprocess.PIPE,
-                                    stderr=subprocess.PIPE)
-            if disp_output:
-                logger.info("Command output:")
-                logger.info(result.stdout)
-                logger.info(result.stderr)
-        except subprocess.CalledProcessError as e:
-            logger.error(f"Error executing stage {stage[constants.NAME]}:\n{e.stderr}")
-            if continue_if_fail:
-                continue
-            else:
-                return False
+        # Execute commands
+        for command in stage[constants.COMMAND]:
+            logger.info(f"   Executing command: {command}")
+            try:
+                result = subprocess.run(command, shell=True, check=True, text=True,
+                                        stdout=subprocess.PIPE,
+                                        stderr=subprocess.PIPE)
+                if disp_output:
+                    logger.info("Command output:")
+                    logger.info(result.stdout)
+                    logger.info(result.stderr)
+            except subprocess.CalledProcessError as e:
+                logger.error(f"Error executing stage {stage[constants.NAME]}:\n{e.stderr}")
+                if continue_if_fail:
+                    continue
+                else:
+                    return False
 
         ###########
         # Artifacts

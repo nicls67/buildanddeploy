@@ -123,7 +123,10 @@ class Config:
                             'Parameter "' + param + '" is not a vectored parameter.')
                         sys.exit(-1)
                 else:
-                    new_config[param] = self._extract_param_from_config(config_template, config[param], param)
+                    if 'vectored' in config_template[param] and config_template[param]['vectored']:
+                        new_config[param] = [self._extract_param_from_config(config_template, config[param], param)]
+                    else:
+                        new_config[param] = self._extract_param_from_config(config_template, config[param], param)
 
             elif config_template[param]['mandatory']:
                 self._logger.error(

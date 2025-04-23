@@ -23,17 +23,20 @@ Working directory must contain a ``config.yaml`` file with build configuration.
 The following parameters shall be provided inside the configuration :
 
 * ``git_repository`` (string): the url the git repository you want to build
+* ``git_branch`` (string, optional): the branch you want to build (``master`` by default)
+* ``git_commit`` (string, optional): the commit you want to build
+* ``git_tag`` (string, optional): the tag you want to build
 * ``display_pipeline_output`` (boolean, optional): Shows all pipeline output (`false` by default)
-* ``generate_artifacts`` (boolean, optional): Activates artifacts generation (`true` by default). If `true`, all
+* ``generate_artifacts`` (boolean, optional): Activates artifact generation (`true` by default). If `true`, all
   artifacts will be generated, no matter what is configured inside the states
-* ``disable_artifacts`` (boolean, optional): Disables all artifacts generation (`false` by default). if `true`, no
+* ``disable_artifacts`` (boolean, optional): Disables all artifacts generations (`false` by default). if `true`, no
   artifact will be generated, no matter what is configured inside the states. ``generate_artifacts`` has priority over
   this setting.
-* ``continue_on_failure`` (boolean, optional): Allow to continue next stages execution if previous stage fails (`false`
+* ``continue_on_failure`` (boolean, optional): Allow continuing next stages execution if previous stage fails (`false`
   by default)
 * ``stages``: A list of build stages to execute, each stage containing the following parameters :
     * ``name`` (string): name of the stage
-    * ``command`` (string): command to execute to build the stage
+    * ``commands`` (string): list of commands to execute to build the stage
 
 ### Use of configuration templates
 
