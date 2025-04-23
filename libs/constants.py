@@ -14,7 +14,7 @@ GENERATE_ARTIFACTS = 'generate_artifacts'
 DISABLE_ARTIFACTS = 'disable_artifacts'
 CONTINUE_ON_FAILURE = 'continue_on_failure'
 DISPLAY_PIPELINE_OUTPUT = 'display_pipeline_output'
-COMMAND = 'command'
+COMMAND = 'commands'
 NAME = 'name'
 ENABLED = 'enabled'
 PATHS = 'paths'
@@ -61,6 +61,7 @@ CONFIGURATION_PARAMS = {
             },
             COMMAND: {
                 'mandatory': True,
+                'vectored': True,
             },
             ARTIFACTS: {
                 'mandatory': False,
