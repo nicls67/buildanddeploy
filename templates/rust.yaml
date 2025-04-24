@@ -1,5 +1,8 @@
 # Global configuration
 display_pipeline_output: false
+generate_artifacts: false
+disable_artifacts: false
+continue_on_failure: false
 
 # Build stages
 stages:

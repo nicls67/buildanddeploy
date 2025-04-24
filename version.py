@@ -1,2 +1,2 @@
-BUILD_AND_DEPLOY_VER = "0.0.1"
+BUILD_AND_DEPLOY_VER = "0.2.0"
 """Tool version"""
