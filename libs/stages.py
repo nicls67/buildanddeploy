@@ -151,12 +151,13 @@ def execute_stages(stages: list, artifacts_enabled: bool | None, continue_if_fai
                             logger.error(f"   Error renaming '{original_name}' to '{new_name}': {e}")
                             return False
 
-                    ####################################################################
+                    #########################################################################
                     # Archive artifact
                     #   -> Archive if archive is activated and assemble is not activated
-                    ####################################################################
-                    if stage[constants.ARTIFACTS][constants.ARCHIVE] and not stage[constants.ARTIFACTS][
-                        constants.ASSEMBLE]:
+                    #      or artifact is a directory
+                    #########################################################################
+                    if not stage[constants.ARTIFACTS][constants.ASSEMBLE] \
+                            and (stage[constants.ARTIFACTS][constants.ARCHIVE] or artifact_isdir):
                         try:
                             if artifact_isdir:
                                 shutil.make_archive(os.path.join('..', constants.ARTIFACTS, artifact_name),
