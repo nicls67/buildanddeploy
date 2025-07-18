@@ -2,7 +2,7 @@ import os
 import shutil
 import sys
 
-from git import Repo
+from git import Repo, GitCommandError, InvalidGitRepositoryError
 
 import libs.constants as constants
 from libs.config import Config
@@ -67,10 +67,26 @@ build_config = Config(logger)
 if not os.path.isdir(constants.GIT):
     os.mkdir(constants.GIT)
     logger.info('Cloning repository ' + build_config.config[constants.GIT_REPOSITORY].split('/')[-1] + '...')
-    git_repo = clone_repo(build_config.config)
+
+    try:
+        git_repo = clone_repo(build_config.config)
+    except GitCommandError as e:
+        logger.error(f"Error cloning repository: {e}")
+        sys.exit(-1)
 else:
     logger.info('Git repository already exists. Skipping clone.')
-    git_repo = Repo(constants.GIT)
+    try:
+        git_repo = Repo(constants.GIT)
+    except InvalidGitRepositoryError as e:
+        logger.error(f"Error opening Git repository: {e}")
+        logger.info('Deleting existing Git repository and trying to clone again...')
+        os.rmdir(constants.GIT)
+        try:
+            git_repo = clone_repo(build_config.config)
+        except GitCommandError as e:
+            logger.error(f"Error cloning repository: {e}")
+            sys.exit(-1)
+
     # Check if the existing repository matches the configured one
     if git_repo.remotes.origin.url != build_config.config[constants.GIT_REPOSITORY]:
         logger.error('Existing repository does not match the configured one.')
