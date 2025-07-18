@@ -98,5 +98,12 @@ result = execute_stages(build_config.config[constants.STAGES], enable_artifacts,
                         build_config.config[constants.CONTINUE_ON_FAILURE], logger,
                         build_config.config[constants.DISPLAY_PIPELINE_OUTPUT])
 
+# Logging
+logger.info("")
+if result:
+    logger.info('Build successful')
+else:
+    logger.error('Build failed')
+
 # Exit script
 sys.exit(0 if result else -1)
