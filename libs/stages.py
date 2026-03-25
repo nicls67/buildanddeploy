@@ -129,7 +129,7 @@ def execute_stages(
                                     os.path.join(
                                         "..",
                                         constants.ARTIFACTS,
-                                        artifact_path.split("/")[-1].split("\\")[-1],
+                                        os.path.basename(artifact_path),
                                     ),
                                 )
                             else:
@@ -147,7 +147,7 @@ def execute_stages(
                     ###################################################
                     # Compute file and directories names for next steps
                     ###################################################
-                    original_name = artifact_path.split("/")[-1].split("\\")[-1]
+                    original_name = os.path.basename(artifact_path)
                     extension = (
                         original_name.split(".")[-1] if not artifact_isdir else None
                     )

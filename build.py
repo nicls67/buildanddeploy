@@ -46,10 +46,10 @@ if len(sys.argv) == 2:
     working_dir = sys.argv[1]
     if not os.path.isdir(working_dir):
         print("Error: The given path is not a valid directory.")
-        sys.exit(-1)
+        sys.exit(1)
 else:
     print("Error: Bad argument supplied")
-    sys.exit(-1)
+    sys.exit(1)
 
 # Create logger
 logger = configure_logging(working_dir)
@@ -65,7 +65,7 @@ build_config = Config(logger)
 
 # Clone Git repository
 if not os.path.isdir(constants.GIT):
-    os.mkdir(constants.GIT)
+    os.makedirs(constants.GIT, exist_ok=True)
     logger.info(
         "Cloning repository "
         + build_config.config[constants.GIT_REPOSITORY].split("/")[-1]
@@ -76,7 +76,7 @@ if not os.path.isdir(constants.GIT):
         git_repo = clone_repo(build_config.config)
     except GitCommandError as e:
         logger.error(f"Error cloning repository: {e}")
-        sys.exit(-1)
+        sys.exit(1)
 else:
     logger.info("Git repository already exists. Skipping clone.")
     try:
@@ -89,12 +89,12 @@ else:
             git_repo = clone_repo(build_config.config)
         except GitCommandError as e:
             logger.error(f"Error cloning repository: {e}")
-            sys.exit(-1)
+            sys.exit(1)
 
     # Check if the existing repository matches the configured one
     if git_repo.remotes.origin.url != build_config.config[constants.GIT_REPOSITORY]:
         logger.error("Existing repository does not match the configured one.")
-        sys.exit(-1)
+        sys.exit(1)
 
 # Update Git repository
 logger.info("Updating repository " + git_repo.remotes.origin.url)
@@ -129,4 +129,4 @@ else:
     logger.error("Build failed")
 
 # Exit script
-sys.exit(0 if result else -1)
+sys.exit(0 if result else 1)

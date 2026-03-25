@@ -1,6 +1,7 @@
 import os
 import sys
 from logging import Logger
+from typing import Any
 
 import yaml
 
@@ -67,7 +68,7 @@ class Config:
                 + constants.CONFILE_FILE_NAME
                 + " is missing in the current directory."
             )
-            sys.exit(-1)
+            sys.exit(1)
 
         # Load configuration from YAML file
         base_config = yaml.load(
@@ -89,7 +90,7 @@ class Config:
                         + constants.PROJECT_VARS
                         + '" must contain exactly one key.'
                     )
-                    sys.exit(-1)
+                    sys.exit(1)
                 key, value = var.popitem()
                 self.env_vars[key] = value
             del base_config[constants.PROJECT_VARS]
@@ -131,13 +132,13 @@ class Config:
                     + param
                     + '".'
                 )
-                sys.exit(-1)
+                sys.exit(1)
 
         # Get template configuration if requested
         config = self._add_params_from_template(config)
 
         # Parse all key in template and retrieve corresponding param in config
-        new_config = {}
+        new_config: dict[str, Any] = {}
         for param in config_template:
             if param in config:
                 if isinstance(config[param], list):
@@ -156,7 +157,7 @@ class Config:
                         self._logger.error(
                             'Parameter "' + param + '" is not a vectored parameter.'
                         )
-                        sys.exit(-1)
+                        sys.exit(1)
                 else:
                     if (
                         "vectored" in config_template[param]
@@ -178,7 +179,7 @@ class Config:
                     + param
                     + '".'
                 )
-                sys.exit(-1)
+                sys.exit(1)
 
             elif "default" in config_template[param]:
                 new_config[param] = config_template[param]["default"]
@@ -255,7 +256,7 @@ class Config:
                     + template_file
                     + "\" doesn't exist in the templates directory."
                 )
-                sys.exit(-1)
+                sys.exit(1)
 
         else:
             return config
@@ -283,6 +284,6 @@ class Config:
                 self._logger.error(
                     'Error: Environment variable "' + env_var + '" is not defined.'
                 )
-                sys.exit(-1)
+                sys.exit(1)
         else:
             return base_str
