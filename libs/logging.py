@@ -17,15 +17,17 @@ def configure_logging(working_dir: str):
     :rtype: logging.Logger
     """
     # Create a logger
-    logger = logging.getLogger('buildanddeploy')
+    logger = logging.getLogger("buildanddeploy")
     logger.setLevel(logging.DEBUG)
 
     # Create a formatter to define the log format
-    formatter_file = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
-    formatter_console = logging.Formatter('%(levelname)s - %(message)s')
+    formatter_file = logging.Formatter(
+        "%(asctime)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
+    )
+    formatter_console = logging.Formatter("%(levelname)s - %(message)s")
 
     # Create a file handler to write logs to a file
-    file_handler = logging.FileHandler(os.path.join(working_dir, 'build.log'), mode='w')
+    file_handler = logging.FileHandler(os.path.join(working_dir, "build.log"), mode="w")
     file_handler.setFormatter(formatter_file)
     file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(formatter_file)

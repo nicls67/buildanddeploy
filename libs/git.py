@@ -14,6 +14,7 @@ def clone_repo(config):
     :type config: dict
     :return: The cloned repository object after a successful clone operation.
     :rtype: Repo
+    :raises git.exc.GitCommandError: If cloning the repository fails.
     """
     return Repo.clone_from(config[constants.GIT_REPOSITORY], constants.GIT)
 
@@ -34,11 +35,12 @@ def update_repo(repo, config):
           exist locally, it will be created tracking the remote branch.
     :type config: dict
     :return: None
+    :raises git.exc.GitCommandError: If updating the repository fails.
     """
     repo.remotes.origin.fetch()
 
     # Discard all local changes
-    repo.git.reset('--hard')
+    repo.git.reset("--hard")
 
     # Determine which reference to update to based on configuration
     if constants.GIT_COMMIT in config and config[constants.GIT_COMMIT]:
@@ -52,11 +54,13 @@ def update_repo(repo, config):
         branch_name = config[constants.GIT_BRANCH]
 
         # Check if a local branch exists
-        local_branch_exists = branch_name in [ref.name.split('/')[-1] for ref in repo.heads]
+        local_branch_exists = branch_name in [
+            ref.name.split("/")[-1] for ref in repo.heads
+        ]
 
         if not local_branch_exists:
             # Create a new local branch that tracks the remote branch
-            repo.git.checkout('-b', branch_name, 'origin/' + branch_name)
+            repo.git.checkout("-b", branch_name, "origin/" + branch_name)
         else:
             # Checkout the existing local branch
             repo.git.checkout(branch_name)

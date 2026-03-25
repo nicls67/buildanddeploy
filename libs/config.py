@@ -56,33 +56,52 @@ class Config:
 
         # Check if config.yaml exists in the current directory
         if os.path.isfile(constants.CONFILE_FILE_NAME):
-            logger.info('Config file ' + constants.CONFILE_FILE_NAME + ' found in the current directory.')
+            logger.info(
+                "Config file "
+                + constants.CONFILE_FILE_NAME
+                + " found in the current directory."
+            )
         else:
-            logger.error('Config file ' + constants.CONFILE_FILE_NAME + ' is missing in the current directory.')
+            logger.error(
+                "Config file "
+                + constants.CONFILE_FILE_NAME
+                + " is missing in the current directory."
+            )
             sys.exit(-1)
 
         # Load configuration from YAML file
-        base_config = yaml.load(open(constants.CONFILE_FILE_NAME), Loader=yaml.SafeLoader)
+        base_config = yaml.load(
+            open(constants.CONFILE_FILE_NAME), Loader=yaml.SafeLoader
+        )
 
         # Retrieve environment variables
-        if constants.PROJECT_VARS in base_config and base_config[constants.PROJECT_VARS]:
-            logger.info('Retrieving environment variables...')
+        if (
+            constants.PROJECT_VARS in base_config
+            and base_config[constants.PROJECT_VARS]
+        ):
+            logger.info("Retrieving environment variables...")
             self.env_vars = {}
             for var in base_config[constants.PROJECT_VARS]:
                 # Check only one key is defined for each environment variable
                 if len(var.keys()) != 1:
-                    logger.error('Each item in "' + constants.PROJECT_VARS + '" must contain exactly one key.')
+                    logger.error(
+                        'Each item in "'
+                        + constants.PROJECT_VARS
+                        + '" must contain exactly one key.'
+                    )
                     sys.exit(-1)
                 key, value = var.popitem()
                 self.env_vars[key] = value
             del base_config[constants.PROJECT_VARS]
         else:
-            logger.info('No environment variables to retrieve.')
+            logger.info("No environment variables to retrieve.")
 
         # Check configuration
-        self.config = self._configuration_check(constants.CONFIGURATION_PARAMS, base_config)
+        self.config = self._configuration_check(
+            constants.CONFIGURATION_PARAMS, base_config
+        )
 
-        logger.info('')
+        logger.info("")
 
     def _configuration_check(self, config_template: dict, config: dict) -> dict:
         """
@@ -98,12 +117,20 @@ class Config:
                        with template defaults or additional processing.
         :return: A dictionary representing the processed and validated configuration derived from the
                  template and input configuration.
+        :raises SystemExit: If invalid parameters or missing mandatory parameters are found.
         """
         # Check all parameters in config exist in the template
         for param in config:
-            if param not in config_template and param != constants.PROJECT_VARS and param != constants.USE_TEMPLATE:
+            if (
+                param not in config_template
+                and param != constants.PROJECT_VARS
+                and param != constants.USE_TEMPLATE
+            ):
                 self._logger.error(
-                    'Config file "config.yaml" contains unknown parameter "' + param + '".')
+                    'Config file "config.yaml" contains unknown parameter "'
+                    + param
+                    + '".'
+                )
                 sys.exit(-1)
 
         # Get template configuration if requested
@@ -114,27 +141,47 @@ class Config:
         for param in config_template:
             if param in config:
                 if isinstance(config[param], list):
-                    if 'vectored' in config_template[param] and config_template[param]['vectored']:
+                    if (
+                        "vectored" in config_template[param]
+                        and config_template[param]["vectored"]
+                    ):
                         param = self._add_params_from_template(param)
-                        new_config[param] = [self._extract_param_from_config(config_template, element, param) for
-                                             element in config[param]]
+                        new_config[param] = [
+                            self._extract_param_from_config(
+                                config_template, element, param
+                            )
+                            for element in config[param]
+                        ]
                     else:
                         self._logger.error(
-                            'Parameter "' + param + '" is not a vectored parameter.')
+                            'Parameter "' + param + '" is not a vectored parameter.'
+                        )
                         sys.exit(-1)
                 else:
-                    if 'vectored' in config_template[param] and config_template[param]['vectored']:
-                        new_config[param] = [self._extract_param_from_config(config_template, config[param], param)]
+                    if (
+                        "vectored" in config_template[param]
+                        and config_template[param]["vectored"]
+                    ):
+                        new_config[param] = [
+                            self._extract_param_from_config(
+                                config_template, config[param], param
+                            )
+                        ]
                     else:
-                        new_config[param] = self._extract_param_from_config(config_template, config[param], param)
+                        new_config[param] = self._extract_param_from_config(
+                            config_template, config[param], param
+                        )
 
-            elif config_template[param]['mandatory']:
+            elif config_template[param]["mandatory"]:
                 self._logger.error(
-                    'Config file "config.yaml" doesn\'t contain the mandatory parameter "' + param + '".')
+                    'Config file "config.yaml" doesn\'t contain the mandatory parameter "'
+                    + param
+                    + '".'
+                )
                 sys.exit(-1)
 
-            elif 'default' in config_template[param]:
-                new_config[param] = config_template[param]['default']
+            elif "default" in config_template[param]:
+                new_config[param] = config_template[param]["default"]
 
         # Return configuration
         return new_config
@@ -157,8 +204,8 @@ class Config:
         :return: Either the processed result of performing a configuration check on sub-parameters
             or the provided data itself if no sub-parameter check is necessary.
         """
-        if 'sub_params' in template[param_name]:
-            return self._configuration_check(template[param_name]['sub_params'], data)
+        if "sub_params" in template[param_name]:
+            return self._configuration_check(template[param_name]["sub_params"], data)
         else:
             new_data = self._replace_param_by_env_var_in_str(data)
             return new_data
@@ -181,13 +228,19 @@ class Config:
         """
         if constants.USE_TEMPLATE in config:
             template_file = config[constants.USE_TEMPLATE]
-            template_full_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..',
-                                              constants.TEMPLATES_DIR, template_file + '.yaml')
+            template_full_file = os.path.join(
+                os.path.dirname(os.path.realpath(__file__)),
+                "..",
+                constants.TEMPLATES_DIR,
+                template_file + ".yaml",
+            )
             if os.path.isfile(template_full_file):
-                self._logger.info('Using template "' + template_file + '" for configuration.')
+                self._logger.info(
+                    'Using template "' + template_file + '" for configuration.'
+                )
 
                 # Get template configuration
-                with open(template_full_file, 'r') as file:
+                with open(template_full_file, "r") as file:
                     template_config = yaml.load(file, Loader=yaml.SafeLoader)
 
                 # Add keys from project config into the template
@@ -197,7 +250,11 @@ class Config:
 
                 return template_config
             else:
-                self._logger.error('Template "' + template_file + '" doesn\'t exist in the templates directory.')
+                self._logger.error(
+                    'Template "'
+                    + template_file
+                    + "\" doesn't exist in the templates directory."
+                )
                 sys.exit(-1)
 
         else:
@@ -218,13 +275,14 @@ class Config:
             corresponding values, or the original string if there are no placeholders.
         :rtype: str
         """
-        if isinstance(base_str, str) and '$' in base_str:
-            env_var = base_str.split('{')[1].split('}')[0]
+        if isinstance(base_str, str) and "$" in base_str:
+            env_var = base_str.split("{")[1].split("}")[0]
             if env_var in self.env_vars:
-                return base_str.replace('${' + env_var + '}', self.env_vars[env_var])
+                return base_str.replace("${" + env_var + "}", self.env_vars[env_var])
             else:
                 self._logger.error(
-                    'Error: Environment variable "' + env_var + '" is not defined.')
+                    'Error: Environment variable "' + env_var + '" is not defined.'
+                )
                 sys.exit(-1)
         else:
             return base_str
