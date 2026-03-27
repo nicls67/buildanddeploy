@@ -38,6 +38,8 @@ def test_config_missing_file(mock_isfile):
         + constants.CONFILE_FILE_NAME
         + " is missing in the current directory."
     )
+
+
 @patch("libs.config.yaml.load")
 @patch("builtins.open", new_callable=mock_open)
 @patch("libs.config.os.path.isfile")

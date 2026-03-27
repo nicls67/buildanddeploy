@@ -6,9 +6,14 @@ from git import Repo
 from libs import constants
 
 
-def is_valid_git_url(url):
+def is_valid_git_url(url: str) -> bool:
     """
     Validates a Git repository URL to prevent argument injection and SSRF.
+    
+    :param url: The Git repository URL to validate.
+    :type url: str
+    :return: True if the URL is valid and safe, False otherwise.
+    :rtype: bool
     """
     if not isinstance(url, str):
         return False
@@ -17,21 +22,21 @@ def is_valid_git_url(url):
     if url.startswith("-"):
         return False
 
-    if re.search(r'\s', url):
+    if re.search(r"\s", url):
         return False
 
     parsed = urlparse(url)
-    allowed_schemes = {'http', 'https', 'git', 'ssh'}
+    allowed_schemes = {"http", "https", "git", "ssh"}
 
     if parsed.scheme in allowed_schemes:
         return True
 
     # Check for SCP-like syntax (e.g. git@github.com:user/repo.git)
     # Ensure it's not a local file path or an ext:: command
-    scp_pattern = re.compile(r'^([a-zA-Z0-9_.\-]+@)?[a-zA-Z0-9_.\-]+:/?.*$')
+    scp_pattern = re.compile(r"^([a-zA-Z0-9_.\-]+@)?[a-zA-Z0-9_.\-]+:/?.*$")
 
     # Explicitly block known dangerous schemes parsed as such if scp matches
-    if parsed.scheme in {'file', 'ext'}:
+    if parsed.scheme in {"file", "ext"}:
         return False
 
     if scp_pattern.match(url):

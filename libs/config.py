@@ -122,7 +122,11 @@ class Config:
         :raises SystemExit: If invalid parameters or missing mandatory parameters are found.
         """
         # Check all parameters in config exist in the template
-        allowed_params = {*config_template, constants.PROJECT_VARS, constants.USE_TEMPLATE}
+        allowed_params = {
+            *config_template,
+            constants.PROJECT_VARS,
+            constants.USE_TEMPLATE,
+        }
         for param in config:
             if param not in allowed_params:
                 self._logger.error(
@@ -275,6 +279,7 @@ class Config:
         :rtype: str
         """
         if isinstance(base_str, str) and "$" in base_str:
+
             def replace_func(match):
                 var_name = match.group(1)
                 if var_name in self.env_vars:

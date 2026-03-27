@@ -12,7 +12,7 @@ def test_is_valid_git_url_valid():
         "ssh://git@github.com/user/repo.git",
         "git@github.com:user/repo.git",
         "user@server:project.git",
-        "server:project.git"
+        "server:project.git",
     ]
     for url in valid_urls:
         assert is_valid_git_url(url) is True
@@ -28,7 +28,7 @@ def test_is_valid_git_url_invalid():
         "ext::sh -c 'touch /tmp/pwned'",
         "/local/path/to/repo",
         12345,
-        None
+        None,
     ]
     for url in invalid_urls:
         assert is_valid_git_url(url) is False

@@ -1,7 +1,7 @@
-import subprocess
 from unittest.mock import patch, MagicMock
 from libs.stages import execute_stages
 from libs import constants
+
 
 @patch("libs.stages.subprocess.run")
 @patch("libs.stages.os.chdir")

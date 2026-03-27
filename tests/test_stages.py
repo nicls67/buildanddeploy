@@ -73,7 +73,7 @@ def test_execute_stages_fail_abort(mock_chdir, mock_run):
     assert result is False
     mock_chdir.assert_called_once_with(constants.GIT)
     mock_run.assert_called_once_with(
-        ['echo', 'Building'],
+        ["echo", "Building"],
         shell=False,
         check=True,
         text=True,
@@ -97,7 +97,9 @@ def test_execute_stages_empty():
 @patch("libs.stages.os.path.isdir")
 @patch("libs.stages.subprocess.run")
 @patch("libs.stages.os.chdir")
-def test_execute_stages_artifact_copy_exception(mock_chdir, mock_run, mock_isdir, mock_copy2):
+def test_execute_stages_artifact_copy_exception(
+    mock_chdir, mock_run, mock_isdir, mock_copy2
+):
     stages = [
         {
             constants.NAME: "Build",
@@ -106,8 +108,8 @@ def test_execute_stages_artifact_copy_exception(mock_chdir, mock_run, mock_isdir
                 constants.ENABLED: True,
                 constants.PATHS: ["some_artifact.txt"],
                 constants.ARCHIVE: False,
-                constants.ASSEMBLE: False
-            }
+                constants.ASSEMBLE: False,
+            },
         }
     ]
     mock_run.return_value.returncode = 0
