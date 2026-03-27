@@ -121,12 +121,9 @@ class Config:
         :raises SystemExit: If invalid parameters or missing mandatory parameters are found.
         """
         # Check all parameters in config exist in the template
+        allowed_params = {*config_template, constants.PROJECT_VARS, constants.USE_TEMPLATE}
         for param in config:
-            if (
-                param not in config_template
-                and param != constants.PROJECT_VARS
-                and param != constants.USE_TEMPLATE
-            ):
+            if param not in allowed_params:
                 self._logger.error(
                     'Config file "config.yaml" contains unknown parameter "'
                     + param
