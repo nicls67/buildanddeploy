@@ -71,9 +71,8 @@ class Config:
             sys.exit(1)
 
         # Load configuration from YAML file
-        base_config = yaml.load(
-            open(constants.CONFILE_FILE_NAME), Loader=yaml.SafeLoader
-        )
+        with open(constants.CONFILE_FILE_NAME) as f:
+            base_config = yaml.load(f, Loader=yaml.SafeLoader)
 
         # Retrieve environment variables
         if (

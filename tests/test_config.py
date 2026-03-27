@@ -38,3 +38,19 @@ def test_config_missing_file(mock_isfile):
         + constants.CONFILE_FILE_NAME
         + " is missing in the current directory."
     )
+@patch("libs.config.yaml.load")
+@patch("builtins.open", new_callable=mock_open)
+@patch("libs.config.os.path.isfile")
+def test_config_missing_mandatory_param(mock_isfile, mock_file, mock_yaml_load):
+    mock_isfile.return_value = True
+
+    mock_yaml_load.return_value = {
+        constants.STAGES: [
+            {constants.NAME: "Test Stage", constants.COMMAND: ['echo "Hello"']}
+        ],
+    }
+
+    with pytest.raises(SystemExit) as exc_info:
+        Config(MagicMock())
+
+    assert exc_info.value.code == 1
