@@ -47,8 +47,8 @@ def test_execute_stages_fail_continue(mock_chdir, mock_run):
     assert result is True
     mock_chdir.assert_called_once_with(constants.GIT)
     mock_run.assert_called_once_with(
-        'echo "Building"',
-        shell=True,
+        ["echo", "Building"],
+        shell=False,
         check=True,
         text=True,
         stdout=subprocess.PIPE,
