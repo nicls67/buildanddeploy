@@ -24,6 +24,20 @@ def test_config_initialization(mock_isfile, mock_file, mock_yaml_load):
     assert config.config[constants.STAGES][0][constants.NAME] == "Test Stage"
 
 
+@patch("libs.config.os.path.isfile")
+def test_config_missing_file(mock_isfile):
+    mock_isfile.return_value = False
+    mock_logger = MagicMock()
+
+    with pytest.raises(SystemExit) as exc_info:
+        Config(mock_logger)
+
+    assert exc_info.value.code == 1
+    mock_logger.error.assert_called_with(
+        "Config file "
+        + constants.CONFILE_FILE_NAME
+        + " is missing in the current directory."
+    )
 @patch("libs.config.yaml.load")
 @patch("builtins.open", new_callable=mock_open)
 @patch("libs.config.os.path.isfile")
