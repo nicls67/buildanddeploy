@@ -1,6 +1,43 @@
+import re
+from urllib.parse import urlparse
+
 from git import Repo
 
 from libs import constants
+
+
+def is_valid_git_url(url):
+    """
+    Validates a Git repository URL to prevent argument injection and SSRF.
+    """
+    if not isinstance(url, str):
+        return False
+
+    url = url.strip()
+    if url.startswith("-"):
+        return False
+
+    if re.search(r'\s', url):
+        return False
+
+    parsed = urlparse(url)
+    allowed_schemes = {'http', 'https', 'git', 'ssh'}
+
+    if parsed.scheme in allowed_schemes:
+        return True
+
+    # Check for SCP-like syntax (e.g. git@github.com:user/repo.git)
+    # Ensure it's not a local file path or an ext:: command
+    scp_pattern = re.compile(r'^([a-zA-Z0-9_.\-]+@)?[a-zA-Z0-9_.\-]+:/?.*$')
+
+    # Explicitly block known dangerous schemes parsed as such if scp matches
+    if parsed.scheme in {'file', 'ext'}:
+        return False
+
+    if scp_pattern.match(url):
+        return True
+
+    return False
 
 
 def clone_repo(config):
@@ -15,8 +52,13 @@ def clone_repo(config):
     :return: The cloned repository object after a successful clone operation.
     :rtype: Repo
     :raises git.exc.GitCommandError: If cloning the repository fails.
+    :raises ValueError: If the configured repository URL is invalid or unsafe.
     """
-    return Repo.clone_from(config[constants.GIT_REPOSITORY], constants.GIT)
+    repo_url = config[constants.GIT_REPOSITORY]
+    if not is_valid_git_url(repo_url):
+        raise ValueError(f"Invalid or unsafe Git repository URL: {repo_url}")
+
+    return Repo.clone_from(repo_url, constants.GIT)
 
 
 def update_repo(repo, config):
