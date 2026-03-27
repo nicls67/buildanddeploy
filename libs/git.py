@@ -54,9 +54,9 @@ def update_repo(repo, config):
         branch_name = config[constants.GIT_BRANCH]
 
         # Check if a local branch exists
-        local_branch_exists = branch_name in [
+        local_branch_exists = branch_name in (
             ref.name.split("/")[-1] for ref in repo.heads
-        ]
+        )
 
         if not local_branch_exists:
             # Create a new local branch that tracks the remote branch
