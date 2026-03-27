@@ -1,5 +1,6 @@
 import glob
 import os
+import shlex
 import shutil
 import subprocess
 from logging import Logger
@@ -63,8 +64,8 @@ def execute_stages(
             logger.info(f"   Executing command: {command}")
             try:
                 result = subprocess.run(
-                    command,
-                    shell=True,
+                    shlex.split(command),
+                    shell=False,
                     check=True,
                     text=True,
                     stdout=subprocess.PIPE,
