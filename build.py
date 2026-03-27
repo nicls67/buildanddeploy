@@ -84,7 +84,7 @@ else:
     except InvalidGitRepositoryError as e:
         logger.error(f"Error opening Git repository: {e}")
         logger.info("Deleting existing Git repository and trying to clone again...")
-        os.rmdir(constants.GIT)
+        shutil.rmtree(constants.GIT)
         try:
             git_repo = clone_repo(build_config.config)
         except GitCommandError as e:
