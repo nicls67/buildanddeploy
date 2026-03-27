@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 from logging import Logger
 from typing import Any
@@ -9,6 +10,7 @@ import libs.constants as constants
 
 
 class Config:
+    _ENV_VAR_PATTERN = re.compile(r"\$\{([^}]+)\}")
     """
     Handles configuration management for the application.
 
@@ -273,13 +275,16 @@ class Config:
         :rtype: str
         """
         if isinstance(base_str, str) and "$" in base_str:
-            env_var = base_str.split("{")[1].split("}")[0]
-            if env_var in self.env_vars:
-                return base_str.replace("${" + env_var + "}", self.env_vars[env_var])
-            else:
-                self._logger.error(
-                    'Error: Environment variable "' + env_var + '" is not defined.'
-                )
-                sys.exit(1)
+            def replace_func(match):
+                var_name = match.group(1)
+                if var_name in self.env_vars:
+                    return self.env_vars[var_name]
+                else:
+                    self._logger.error(
+                        'Error: Environment variable "' + var_name + '" is not defined.'
+                    )
+                    sys.exit(1)
+
+            return self._ENV_VAR_PATTERN.sub(replace_func, base_str)
         else:
             return base_str
