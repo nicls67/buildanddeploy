@@ -1,2 +1,6 @@
 /.idea/
 /test_sandbox/
+/__pycache__/
+/.ruff_cache/
+/libs/__pycache__/
+/tests/__pycache__/
