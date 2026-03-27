@@ -72,6 +72,14 @@ def test_execute_stages_fail_abort(mock_chdir, mock_run):
 
     assert result is False
     mock_chdir.assert_called_once_with(constants.GIT)
+    mock_run.assert_called_once_with(
+        ['echo', 'Building'],
+        shell=False,
+        check=True,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
 
 
 def test_execute_stages_empty():
@@ -83,3 +91,39 @@ def test_execute_stages_empty():
         disp_output=False,
     )
     assert result is True
+
+
+@patch("libs.stages.shutil.copy2")
+@patch("libs.stages.os.path.isdir")
+@patch("libs.stages.subprocess.run")
+@patch("libs.stages.os.chdir")
+def test_execute_stages_artifact_copy_exception(mock_chdir, mock_run, mock_isdir, mock_copy2):
+    stages = [
+        {
+            constants.NAME: "Build",
+            constants.COMMAND: ['echo "Building"'],
+            constants.ARTIFACTS: {
+                constants.ENABLED: True,
+                constants.PATHS: ["some_artifact.txt"],
+                constants.ARCHIVE: False,
+                constants.ASSEMBLE: False
+            }
+        }
+    ]
+    mock_run.return_value.returncode = 0
+    mock_isdir.return_value = False
+    mock_copy2.side_effect = Exception("Copy failed")
+
+    logger = MagicMock()
+    result = execute_stages(
+        stages,
+        artifacts_enabled=None,
+        continue_if_fail=False,
+        logger=logger,
+        disp_output=False,
+    )
+
+    assert result is False
+    logger.error.assert_called_with(
+        "   Error copying artifact some_artifact.txt to 'artifacts': Copy failed"
+    )
