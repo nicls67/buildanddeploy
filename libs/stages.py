@@ -14,6 +14,7 @@ def execute_stages(
     continue_if_fail: bool,
     logger: Logger,
     disp_output: bool = False,
+    save_output: bool = False,
 ) -> bool:
     """
     Executes a list of pipeline stages, handles their artifacts, and provides execution results.
@@ -42,6 +43,10 @@ def execute_stages(
     :param disp_output: A boolean flag indicating whether to display the output (stdout and stderr)
        of the executed commands. Default is False.
     :type disp_output: bool
+
+    :param save_output: A boolean flag indicating whether to save the output (stdout and stderr)
+       of the executed commands to a text file in the artifacts directory. Default is False.
+    :type save_output: bool
 
     :return: A boolean indicating success status (True for success, False for failure).
     :rtype: bool
@@ -75,10 +80,32 @@ def execute_stages(
                     logger.info("Command output:")
                     logger.info(result.stdout)
                     logger.info(result.stderr)
+
+                if save_output:
+                    with open(
+                        os.path.join(
+                            "..", constants.ARTIFACTS, f"{stage[constants.NAME]}.txt"
+                        ),
+                        "a",
+                    ) as f:
+                        f.write(result.stdout)
+                        f.write(result.stderr)
+
             except subprocess.CalledProcessError as e:
                 logger.error(
                     f"Error executing stage {stage[constants.NAME]}:\n{e.stderr}"
                 )
+                if save_output:
+                    with open(
+                        os.path.join(
+                            "..", constants.ARTIFACTS, f"{stage[constants.NAME]}.txt"
+                        ),
+                        "a",
+                    ) as f:
+                        if e.stdout:
+                            f.write(e.stdout)
+                        if e.stderr:
+                            f.write(e.stderr)
                 if continue_if_fail:
                     continue
                 else:

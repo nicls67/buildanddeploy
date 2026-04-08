@@ -2,7 +2,7 @@ import os
 import shutil
 import sys
 
-from git import Repo, GitCommandError, InvalidGitRepositoryError
+from git import GitCommandError, InvalidGitRepositoryError, Repo
 
 import libs.constants as constants
 from libs.config import Config
@@ -119,6 +119,7 @@ result = execute_stages(
     build_config.config[constants.CONTINUE_ON_FAILURE],
     logger,
     build_config.config[constants.DISPLAY_PIPELINE_OUTPUT],
+    build_config.config[constants.SAVE_PIPELINE_OUTPUT],
 )
 
 # Logging

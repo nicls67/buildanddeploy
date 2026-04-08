@@ -1,7 +1,9 @@
+import os
 import subprocess
-from unittest.mock import patch, MagicMock
-from libs.stages import execute_stages
+from unittest.mock import MagicMock, patch
+
 from libs import constants
+from libs.stages import execute_stages
 
 
 @patch("libs.stages.subprocess.run")
@@ -129,3 +131,55 @@ def test_execute_stages_artifact_copy_exception(
     logger.error.assert_called_with(
         "   Error copying artifact some_artifact.txt to 'artifacts': Copy failed"
     )
+
+
+@patch("libs.stages.subprocess.run")
+@patch("libs.stages.os.chdir")
+@patch("builtins.open")
+def test_execute_stages_save_output(mock_open, mock_chdir, mock_run):
+    stages = [{constants.NAME: "Build", constants.COMMAND: ['echo "Building"']}]
+    mock_run.return_value.returncode = 0
+    mock_run.return_value.stdout = "stdout output"
+    mock_run.return_value.stderr = "stderr output"
+
+    result = execute_stages(
+        stages,
+        artifacts_enabled=None,
+        continue_if_fail=False,
+        logger=MagicMock(),
+        disp_output=False,
+        save_output=True,
+    )
+
+    assert result is True
+    mock_open.assert_called_with(
+        os.path.join("..", constants.ARTIFACTS, "Build.txt"), "a"
+    )
+    mock_open.return_value.__enter__.return_value.write.assert_any_call("stdout output")
+    mock_open.return_value.__enter__.return_value.write.assert_any_call("stderr output")
+
+
+@patch("libs.stages.subprocess.run")
+@patch("libs.stages.os.chdir")
+@patch("builtins.open")
+def test_execute_stages_save_output_fail(mock_open, mock_chdir, mock_run):
+    stages = [{constants.NAME: "Build", constants.COMMAND: ['echo "Building"']}]
+    mock_run.side_effect = subprocess.CalledProcessError(
+        1, "cmd", output="stdout error", stderr="stderr error"
+    )
+
+    result = execute_stages(
+        stages,
+        artifacts_enabled=None,
+        continue_if_fail=False,
+        logger=MagicMock(),
+        disp_output=False,
+        save_output=True,
+    )
+
+    assert result is False
+    mock_open.assert_called_with(
+        os.path.join("..", constants.ARTIFACTS, "Build.txt"), "a"
+    )
+    mock_open.return_value.__enter__.return_value.write.assert_any_call("stdout error")
+    mock_open.return_value.__enter__.return_value.write.assert_any_call("stderr error")

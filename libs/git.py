@@ -9,7 +9,7 @@ from libs import constants
 def is_valid_git_url(url: str) -> bool:
     """
     Validates a Git repository URL to prevent argument injection and SSRF.
-    
+
     :param url: The Git repository URL to validate.
     :type url: str
     :return: True if the URL is valid and safe, False otherwise.
