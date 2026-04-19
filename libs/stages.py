@@ -45,7 +45,7 @@ def execute_stages(
     :type disp_output: bool
 
     :param save_output: A boolean flag indicating whether to save the output (stdout and stderr)
-       of the executed commands to a text file in the artifacts directory. Default is False.
+       of the executed commands to a text file in the logs directory. Default is False.
     :type save_output: bool
 
     :return: A boolean indicating success status (True for success, False for failure).
@@ -84,12 +84,14 @@ def execute_stages(
                 if save_output:
                     with open(
                         os.path.join(
-                            "..", constants.ARTIFACTS, f"{stage[constants.NAME]}.txt"
+                            "..", constants.LOGS, f"{stage[constants.NAME]}.txt"
                         ),
                         "a",
                     ) as f:
+                        f.write(f">>> {command}\n")
                         f.write(result.stdout)
                         f.write(result.stderr)
+                        f.write("\n")
 
             except subprocess.CalledProcessError as e:
                 logger.error(

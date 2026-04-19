@@ -27,7 +27,7 @@ The following parameters shall be provided inside the configuration :
 * ``git_commit`` (string, optional): the commit you want to build
 * ``git_tag`` (string, optional): the tag you want to build
 * ``display_pipeline_output`` (boolean, optional): Shows all pipeline output (`false` by default)
-* ``save_pipeline_output`` (boolean, optional): Saves all pipeline output to a text file in the artifacts directory (`true` by default)
+* ``save_pipeline_output`` (boolean, optional): Saves all pipeline output to a text file in the logs directory (`true` by default)
 * ``generate_artifacts`` (boolean, optional): Activates artifact generation (`false` by default). If `true`, all
   artifacts will be generated, no matter what is configured inside the states
 * ``disable_artifacts`` (boolean, optional): Disables all artifacts generations (`false` by default). if `true`, no

@@ -105,6 +105,11 @@ if os.path.isdir(constants.ARTIFACTS):
     shutil.rmtree(constants.ARTIFACTS)
 os.mkdir(constants.ARTIFACTS)
 
+# Create logs directory
+if os.path.isdir(constants.LOGS):
+    shutil.rmtree(constants.LOGS)
+os.mkdir(constants.LOGS)
+
 # Check global artifacts activation
 enable_artifacts: bool | None = None
 if build_config.config[constants.GENERATE_ARTIFACTS]:

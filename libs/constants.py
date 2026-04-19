@@ -1,4 +1,5 @@
 GIT = "git"
+LOGS = "logs"
 CONFILE_FILE_NAME = "config.yaml"
 TEMPLATES_DIR = "templates"
 
