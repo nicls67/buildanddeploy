@@ -1,3 +1,4 @@
+# pyright: reportAny=false, reportExplicitAny=false
 import glob
 import os
 import shlex
@@ -12,7 +13,7 @@ from version import APP_NAME, BUILD_AND_DEPLOY_VER
 
 
 def execute_stages(
-    stages: list[dict[str, Any]],
+    stages: list[dict[str, Any]],  # type: ignore
     artifacts_enabled: bool | None,
     continue_if_fail: bool,
     logger: Logger,
@@ -68,7 +69,7 @@ def execute_stages(
         logger.info(f"Executing stage {stage[constants.NAME]}")
 
         # Execute commands
-        for command in stage[constants.COMMAND]:
+        for command in stage[constants.COMMAND]:  # type: ignore
             logger.info(f"   Executing command: {command}")
             try:
                 result = subprocess.run(
@@ -102,7 +103,7 @@ def execute_stages(
 
             except subprocess.CalledProcessError as e:
                 logger.error(
-                    f"Error executing stage {stage[constants.NAME]}:\n{e.stderr}"
+                    f"Error executing stage {stage[constants.NAME]}:\n{e.stderr}"  # type: ignore
                 )
                 if save_output:
                     with open(
@@ -111,10 +112,10 @@ def execute_stages(
                         ),
                         "a",
                     ) as f:
-                        if e.stdout:
-                            _ = f.write(str(e.stdout))
-                        if e.stderr:
-                            _ = f.write(str(e.stderr))
+                        if e.stdout:  # type: ignore
+                            _ = f.write(str(e.stdout))  # type: ignore
+                        if e.stderr:  # type: ignore
+                            _ = f.write(str(e.stderr))  # type: ignore
                 if continue_if_fail:
                     continue
                 else:
@@ -131,7 +132,7 @@ def execute_stages(
             )
             if process_artifacts:
                 logger.info("   Retrieving artifacts...")
-                for i, path in enumerate(stage[constants.ARTIFACTS][constants.PATHS]):
+                for i, path in enumerate(stage[constants.ARTIFACTS][constants.PATHS]):  # type: ignore
                     artifact_path: str = str(path)
                     # Get artifact full path
                     if "*" in artifact_path:

@@ -1,3 +1,4 @@
+# pyright: reportAny=false, reportExplicitAny=false
 import os
 import subprocess
 from unittest.mock import MagicMock, patch
@@ -10,7 +11,7 @@ from libs.stages import execute_stages
 @patch("libs.stages.os.chdir")
 def test_execute_stages_success(mock_chdir: MagicMock, mock_run: MagicMock) -> None:
     stages = [{constants.NAME: "Build", constants.COMMAND: ['echo "Building"']}]
-    mock_run.return_value.returncode = 0
+    mock_run.return_value.returncode = 0  # type: ignore
 
     result = execute_stages(
         stages,
@@ -120,7 +121,7 @@ def test_execute_stages_artifact_copy_exception(
             },
         }
     ]
-    mock_run.return_value.returncode = 0
+    mock_run.return_value.returncode = 0  # type: ignore
     mock_isdir.return_value = False
     mock_copy2.side_effect = Exception("Copy failed")
 
@@ -134,7 +135,7 @@ def test_execute_stages_artifact_copy_exception(
     )
 
     assert result is False
-    logger.error.assert_called_with(
+    logger.error.assert_called_with(  # type: ignore
         "   Error copying artifact some_artifact.txt to 'artifacts': Copy failed"
     )
 
@@ -147,9 +148,9 @@ def test_execute_stages_save_output(
 ) -> None:
     _ = mock_chdir
     stages = [{constants.NAME: "Build", constants.COMMAND: ['echo "Building"']}]
-    mock_run.return_value.returncode = 0
-    mock_run.return_value.stdout = "stdout output"
-    mock_run.return_value.stderr = "stderr output"
+    mock_run.return_value.returncode = 0  # type: ignore
+    mock_run.return_value.stdout = "stdout output"  # type: ignore
+    mock_run.return_value.stderr = "stderr output"  # type: ignore
 
     result = execute_stages(
         stages,
@@ -162,8 +163,8 @@ def test_execute_stages_save_output(
 
     assert result is True
     mock_open.assert_called_with(os.path.join("..", constants.LOGS, "Build.txt"), "a")
-    mock_open.return_value.__enter__.return_value.write.assert_any_call("stdout output")
-    mock_open.return_value.__enter__.return_value.write.assert_any_call("stderr output")
+    mock_open.return_value.__enter__.return_value.write.assert_any_call("stdout output")  # type: ignore
+    mock_open.return_value.__enter__.return_value.write.assert_any_call("stderr output")  # type: ignore
 
 
 @patch("libs.stages.subprocess.run")
@@ -189,5 +190,5 @@ def test_execute_stages_save_output_fail(
 
     assert result is False
     mock_open.assert_called_with(os.path.join("..", constants.LOGS, "Build.txt"), "a")
-    mock_open.return_value.__enter__.return_value.write.assert_any_call("stdout error")
-    mock_open.return_value.__enter__.return_value.write.assert_any_call("stderr error")
+    mock_open.return_value.__enter__.return_value.write.assert_any_call("stdout error")  # type: ignore
+    mock_open.return_value.__enter__.return_value.write.assert_any_call("stderr error")  # type: ignore

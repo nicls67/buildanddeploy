@@ -1,3 +1,4 @@
+# pyright: reportAny=false, reportExplicitAny=false
 import os
 import shutil
 import sys

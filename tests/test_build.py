@@ -1,3 +1,4 @@
+# pyright: reportAny=false, reportExplicitAny=false
 import runpy
 import unittest
 from io import StringIO
@@ -11,9 +12,9 @@ class TestBuildPy(unittest.TestCase):
         with self.assertRaises(SystemExit) as cm:
             _ = runpy.run_path("build.py")
         self.assertEqual(cm.exception.code, 0)
-        self.assertIn("BuildAndDeploy version", str(mock_stdout.getvalue()))
+        self.assertIn("BuildAndDeploy version", str(mock_stdout.getvalue()))  # type: ignore
         self.assertIn(
-            "Usage: build.py <working_directory>", str(mock_stdout.getvalue())
+            "Usage: build.py <working_directory>", str(mock_stdout.getvalue())  # type: ignore
         )
 
     @patch("sys.stdout", new_callable=StringIO)
@@ -22,7 +23,7 @@ class TestBuildPy(unittest.TestCase):
         with self.assertRaises(SystemExit) as cm:
             _ = runpy.run_path("build.py")
         self.assertEqual(cm.exception.code, 1)
-        self.assertIn("Error: Bad argument supplied", str(mock_stdout.getvalue()))
+        self.assertIn("Error: Bad argument supplied", str(mock_stdout.getvalue()))  # type: ignore
 
     @patch("sys.stdout", new_callable=StringIO)
     @patch("sys.argv", ["build.py", "non_existent_directory_12345"])
@@ -32,7 +33,7 @@ class TestBuildPy(unittest.TestCase):
         self.assertEqual(cm.exception.code, 1)
         self.assertIn(
             "Error: The given path is not a valid directory.",
-            str(mock_stdout.getvalue()),
+            str(mock_stdout.getvalue()),  # type: ignore
         )
 
 

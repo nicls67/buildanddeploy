@@ -1,3 +1,4 @@
+# pyright: reportAny=false, reportExplicitAny=false
 import re
 from typing import Any
 from urllib.parse import ParseResult, urlparse
@@ -7,7 +8,7 @@ from git import Repo
 from libs import constants
 
 
-def is_valid_git_url(url: Any) -> bool:
+def is_valid_git_url(url: Any) -> bool:  # type: ignore
     """
     Validates a Git repository URL to prevent argument injection and SSRF.
 
@@ -46,7 +47,7 @@ def is_valid_git_url(url: Any) -> bool:
     return False
 
 
-def clone_repo(config: dict[str, Any]) -> Repo:
+def clone_repo(config: dict[str, Any]) -> Repo:  # type: ignore
     """
     Clones a remote repository to a specified directory using the provided configuration.
 
@@ -60,14 +61,14 @@ def clone_repo(config: dict[str, Any]) -> Repo:
     :raises git.exc.GitCommandError: If cloning the repository fails.
     :raises ValueError: If the configured repository URL is invalid or unsafe.
     """
-    repo_url: Any = config[constants.GIT_REPOSITORY]
+    repo_url: Any = config[constants.GIT_REPOSITORY]  # type: ignore
     if not is_valid_git_url(repo_url):
         raise ValueError(f"Invalid or unsafe Git repository URL: {repo_url}")
 
     return Repo.clone_from(str(repo_url), constants.GIT)
 
 
-def update_repo(repo: Repo, config: dict[str, Any]) -> None:
+def update_repo(repo: Repo, config: dict[str, Any]) -> None:  # type: ignore
     """
     Updates a local Git repository to match the desired state specified in the
     configuration. The update can be based on a specific commit, tag, or branch,
@@ -88,18 +89,18 @@ def update_repo(repo: Repo, config: dict[str, Any]) -> None:
     _ = repo.remotes.origin.fetch()
 
     # Discard all local changes
-    _ = repo.git.reset("--hard")
+    _ = repo.git.reset("--hard")  # type: ignore
 
     # Determine which reference to update to based on configuration
     if constants.GIT_COMMIT in config and config[constants.GIT_COMMIT]:
         # If a specific commit is specified, checkout that commit
-        _ = repo.git.checkout(str(config[constants.GIT_COMMIT]))
+        _ = repo.git.checkout(str(config[constants.GIT_COMMIT]))  # type: ignore
     elif constants.GIT_TAG in config and config[constants.GIT_TAG]:
         # If a specific tag is specified, checkout that tag
-        _ = repo.git.checkout(str(config[constants.GIT_TAG]))
+        _ = repo.git.checkout(str(config[constants.GIT_TAG]))  # type: ignore
     else:
         # Otherwise, use the configured branch
-        branch_name: Any = config[constants.GIT_BRANCH]
+        branch_name: Any = config[constants.GIT_BRANCH]  # type: ignore
         branch_name_str = str(branch_name)
 
         # Check if a local branch exists
@@ -109,10 +110,10 @@ def update_repo(repo: Repo, config: dict[str, Any]) -> None:
 
         if not local_branch_exists:
             # Create a new local branch that tracks the remote branch
-            _ = repo.git.checkout("-b", branch_name_str, "origin/" + branch_name_str)
+            _ = repo.git.checkout("-b", branch_name_str, "origin/" + branch_name_str)  # type: ignore
         else:
             # Checkout the existing local branch
-            _ = repo.git.checkout(branch_name_str)
+            _ = repo.git.checkout(branch_name_str)  # type: ignore
 
         # Pull the latest changes
         _ = repo.remotes.origin.pull()

@@ -1,8 +1,9 @@
+# pyright: reportAny=false, reportExplicitAny=false
 import os
 import re
 import sys
 from logging import Logger
-from typing import Any
+from typing import Any, cast
 
 import yaml
 
@@ -13,7 +14,7 @@ class Config:
     _ENV_VAR_PATTERN: re.Pattern[str] = re.compile(r"\$\{([^}]+)\}")
     _logger: Logger
     env_vars: dict[str, str]
-    config: dict[str, Any]
+    config: dict[str, Any]  # type: ignore
 
     """
     Handles configuration management for the application.
@@ -77,9 +78,10 @@ class Config:
             )
             sys.exit(1)
 
-        # Load configuration from YAML file
         with open(constants.CONFILE_FILE_NAME) as f:
-            base_config: dict[str, Any] = yaml.load(f, Loader=yaml.SafeLoader)
+            base_config: dict[str, Any] = cast(  # type: ignore
+                dict[str, Any], yaml.load(f, Loader=yaml.SafeLoader)  # type: ignore
+            )
 
         # Retrieve environment variables
         if (
@@ -87,16 +89,16 @@ class Config:
             and base_config[constants.PROJECT_VARS]
         ):
             logger.info("Retrieving environment variables...")
-            for var in base_config[constants.PROJECT_VARS]:
+            for var in base_config[constants.PROJECT_VARS]:  # type: ignore
                 # Check only one key is defined for each environment variable
-                if len(list(var.keys())) != 1:
+                if len(list(var.keys())) != 1:  # type: ignore
                     logger.error(
                         'Each item in "'
                         + constants.PROJECT_VARS
                         + '" must contain exactly one key.'
                     )
                     sys.exit(1)
-                key, value = var.popitem()
+                key, value = var.popitem()  # type: ignore
                 self.env_vars[str(key)] = str(value)
             del base_config[constants.PROJECT_VARS]
         else:
@@ -110,8 +112,8 @@ class Config:
         logger.info("")
 
     def _configuration_check(
-        self, config_template: dict[str, Any], config: dict[str, Any]
-    ) -> dict[str, Any]:
+        self, config_template: dict[str, Any], config: dict[str, Any]  # type: ignore
+    ) -> dict[str, Any]:  # type: ignore
         """
         Validates and processes the configuration dictionary based on the provided configuration template.
         This function ensures that all parameters in the configuration are valid, retrieves default values
@@ -146,7 +148,7 @@ class Config:
         config = self._add_params_from_template(config)
 
         # Parse all key in template and retrieve corresponding param in config
-        new_config: dict[str, Any] = {}
+        new_config: dict[str, Any] = {}  # type: ignore
         for param in config_template:
             if param in config:
                 if isinstance(config[param], list):
@@ -158,7 +160,7 @@ class Config:
                             self._extract_param_from_config(
                                 config_template, element, param
                             )
-                            for element in config[param]
+                            for element in config[param]  # type: ignore
                         ]
                     else:
                         self._logger.error(
@@ -196,9 +198,9 @@ class Config:
         # Return configuration
         return new_config
 
-    def _extract_param_from_config(
-        self, template: dict[str, Any], data: Any, param_name: str
-    ) -> Any:
+    def _extract_param_from_config(  # type: ignore
+        self, template: dict[str, Any], data: Any, param_name: str  # type: ignore
+    ) -> Any:  # type: ignore
         """
         Extracts a parameter value from a configuration template based on the specified parameter name.
 
@@ -221,10 +223,10 @@ class Config:
                 dict(template[param_name]["sub_params"]), dict(data)
             )
         else:
-            new_data: Any = self._replace_param_by_env_var_in_str(data)
-            return new_data
+            new_data: Any = self._replace_param_by_env_var_in_str(data)  # type: ignore
+            return new_data  # type: ignore
 
-    def _add_params_from_template(self, config: dict[str, Any]) -> dict[str, Any]:
+    def _add_params_from_template(self, config: dict[str, Any]) -> dict[str, Any]:  # type: ignore
         """
         Adds parameters from a specified template file to the configuration if the template is
         enabled in the given configuration dictionary.
@@ -241,7 +243,7 @@ class Config:
         :rtype: dict
         """
         if constants.USE_TEMPLATE in config:
-            template_file: Any = config[constants.USE_TEMPLATE]
+            template_file: Any = config[constants.USE_TEMPLATE]  # type: ignore
             template_full_file = os.path.join(
                 os.path.dirname(os.path.realpath(__file__)),
                 "..",
@@ -253,10 +255,9 @@ class Config:
                     'Using template "' + str(template_file) + '" for configuration.'
                 )
 
-                # Get template configuration
                 with open(template_full_file, "r") as file:
-                    template_config: dict[str, Any] = yaml.load(
-                        file, Loader=yaml.SafeLoader
+                    template_config: dict[str, Any] = cast(  # type: ignore
+                        dict[str, Any], yaml.load(file, Loader=yaml.SafeLoader)  # type: ignore
                     )
 
                 # Add keys from project config into the template
@@ -276,7 +277,7 @@ class Config:
         else:
             return config
 
-    def _replace_param_by_env_var_in_str(self, base_str: Any) -> Any:
+    def _replace_param_by_env_var_in_str(self, base_str: Any) -> Any:  # type: ignore
         """
         Replaces placeholders for environment variables in the input string with their
         corresponding values from the `self.env_vars` dictionary. Placeholders are

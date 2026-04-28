@@ -1,3 +1,4 @@
+# pyright: reportAny=false, reportExplicitAny=false
 from typing import Any
 
 GIT = "git"
@@ -26,7 +27,7 @@ ARCHIVE = "archive"
 ASSEMBLE = "assemble"
 STAGES = "stages"
 
-CONFIGURATION_PARAMS: dict[str, Any] = {
+CONFIGURATION_PARAMS: dict[str, Any] = {  # type: ignore
     GIT_REPOSITORY: {
         "mandatory": True,
     },

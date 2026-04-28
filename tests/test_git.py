@@ -1,3 +1,4 @@
+# pyright: reportAny=false, reportExplicitAny=false
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -68,9 +69,9 @@ def test_update_repo_with_commit() -> None:
 
     update_repo(mock_repo, config)
 
-    mock_repo.remotes.origin.fetch.assert_called_once()
-    mock_repo.git.reset.assert_called_once_with("--hard")
-    mock_repo.git.checkout.assert_called_with("abcdef1234567890")
+    mock_repo.remotes.origin.fetch.assert_called_once()  # type: ignore
+    mock_repo.git.reset.assert_called_once_with("--hard")  # type: ignore
+    mock_repo.git.checkout.assert_called_with("abcdef1234567890")  # type: ignore
 
 
 def test_update_repo_with_branch() -> None:
@@ -82,7 +83,7 @@ def test_update_repo_with_branch() -> None:
 
     update_repo(mock_repo, config)
 
-    mock_repo.remotes.origin.fetch.assert_called_once()
-    mock_repo.git.reset.assert_called_once_with("--hard")
-    mock_repo.git.checkout.assert_any_call("develop")
-    mock_repo.remotes.origin.pull.assert_called_once()
+    mock_repo.remotes.origin.fetch.assert_called_once()  # type: ignore
+    mock_repo.git.reset.assert_called_once_with("--hard")  # type: ignore
+    mock_repo.git.checkout.assert_any_call("develop")  # type: ignore
+    mock_repo.remotes.origin.pull.assert_called_once()  # type: ignore

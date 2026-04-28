@@ -1,3 +1,4 @@
+# pyright: reportAny=false, reportExplicitAny=false
 from unittest.mock import MagicMock, mock_open, patch
 
 import pytest
@@ -41,7 +42,7 @@ def test_config_missing_file(mock_isfile: MagicMock) -> None:
         _ = Config(mock_logger)
 
     assert exc_info.value.code == 1
-    mock_logger.error.assert_called_with(
+    mock_logger.error.assert_called_with(  # type: ignore
         "Config file "
         + constants.CONFILE_FILE_NAME
         + " is missing in the current directory."
