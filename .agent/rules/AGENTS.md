@@ -77,9 +77,9 @@ Read the diff and focus primarily on:
 - Clean imports : remove unused imports
 
 ### 4) Automated checks (read-only)
+- basedpyright 
 - ruff format --check .
 - ruff check .
-- mypy .
 
 ### 5) Automated checks corrections
 - If any issue has been found on a modified file by an automated check, you are allowed to correct it.

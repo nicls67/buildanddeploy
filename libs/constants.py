@@ -1,4 +1,8 @@
+# pyright: reportAny=false, reportExplicitAny=false
+from typing import Any
+
 GIT = "git"
+LOGS = "logs"
 CONFILE_FILE_NAME = "config.yaml"
 TEMPLATES_DIR = "templates"
 
@@ -14,6 +18,7 @@ GENERATE_ARTIFACTS = "generate_artifacts"
 DISABLE_ARTIFACTS = "disable_artifacts"
 CONTINUE_ON_FAILURE = "continue_on_failure"
 DISPLAY_PIPELINE_OUTPUT = "display_pipeline_output"
+SAVE_PIPELINE_OUTPUT = "save_pipeline_output"
 COMMAND = "commands"
 NAME = "name"
 ENABLED = "enabled"
@@ -22,7 +27,7 @@ ARCHIVE = "archive"
 ASSEMBLE = "assemble"
 STAGES = "stages"
 
-CONFIGURATION_PARAMS = {
+CONFIGURATION_PARAMS: dict[str, Any] = {  # type: ignore
     GIT_REPOSITORY: {
         "mandatory": True,
     },
@@ -39,6 +44,10 @@ CONFIGURATION_PARAMS = {
     DISPLAY_PIPELINE_OUTPUT: {
         "mandatory": False,
         "default": False,
+    },
+    SAVE_PIPELINE_OUTPUT: {
+        "mandatory": False,
+        "default": True,
     },
     GENERATE_ARTIFACTS: {
         "mandatory": False,

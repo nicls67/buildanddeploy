@@ -1,10 +1,12 @@
+# pyright: reportAny=false, reportExplicitAny=false
+import logging
 import os
 import tempfile
-import logging
+
 from libs.logging import configure_logging
 
 
-def test_configure_logging():
+def test_configure_logging() -> None:
     with tempfile.TemporaryDirectory() as temp_dir:
         logger = configure_logging(temp_dir)
         assert isinstance(logger, logging.Logger)
