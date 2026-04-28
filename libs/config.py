@@ -10,7 +10,11 @@ import libs.constants as constants
 
 
 class Config:
-    _ENV_VAR_PATTERN = re.compile(r"\$\{([^}]+)\}")
+    _ENV_VAR_PATTERN: re.Pattern[str] = re.compile(r"\$\{([^}]+)\}")
+    _logger: Logger
+    env_vars: dict[str, str]
+    config: dict[str, Any]
+
     """
     Handles configuration management for the application.
 
@@ -56,6 +60,7 @@ class Config:
 
         """
         self._logger = logger
+        self.env_vars = {}
 
         # Check if config.yaml exists in the current directory
         if os.path.isfile(constants.CONFILE_FILE_NAME):
@@ -74,7 +79,7 @@ class Config:
 
         # Load configuration from YAML file
         with open(constants.CONFILE_FILE_NAME) as f:
-            base_config = yaml.load(f, Loader=yaml.SafeLoader)
+            base_config: dict[str, Any] = yaml.load(f, Loader=yaml.SafeLoader)
 
         # Retrieve environment variables
         if (
@@ -82,10 +87,9 @@ class Config:
             and base_config[constants.PROJECT_VARS]
         ):
             logger.info("Retrieving environment variables...")
-            self.env_vars = {}
             for var in base_config[constants.PROJECT_VARS]:
                 # Check only one key is defined for each environment variable
-                if len(var.keys()) != 1:
+                if len(list(var.keys())) != 1:
                     logger.error(
                         'Each item in "'
                         + constants.PROJECT_VARS
@@ -93,7 +97,7 @@ class Config:
                     )
                     sys.exit(1)
                 key, value = var.popitem()
-                self.env_vars[key] = value
+                self.env_vars[str(key)] = str(value)
             del base_config[constants.PROJECT_VARS]
         else:
             logger.info("No environment variables to retrieve.")
@@ -105,7 +109,9 @@ class Config:
 
         logger.info("")
 
-    def _configuration_check(self, config_template: dict, config: dict) -> dict:
+    def _configuration_check(
+        self, config_template: dict[str, Any], config: dict[str, Any]
+    ) -> dict[str, Any]:
         """
         Validates and processes the configuration dictionary based on the provided configuration template.
         This function ensures that all parameters in the configuration are valid, retrieves default values
@@ -131,7 +137,7 @@ class Config:
             if param not in allowed_params:
                 self._logger.error(
                     'Config file "config.yaml" contains unknown parameter "'
-                    + param
+                    + str(param)
                     + '".'
                 )
                 sys.exit(1)
@@ -148,7 +154,6 @@ class Config:
                         "vectored" in config_template[param]
                         and config_template[param]["vectored"]
                     ):
-                        param = self._add_params_from_template(param)
                         new_config[param] = [
                             self._extract_param_from_config(
                                 config_template, element, param
@@ -157,7 +162,9 @@ class Config:
                         ]
                     else:
                         self._logger.error(
-                            'Parameter "' + param + '" is not a vectored parameter.'
+                            'Parameter "'
+                            + str(param)
+                            + '" is not a vectored parameter.'
                         )
                         sys.exit(1)
                 else:
@@ -178,7 +185,7 @@ class Config:
             elif config_template[param]["mandatory"]:
                 self._logger.error(
                     'Config file "config.yaml" doesn\'t contain the mandatory parameter "'
-                    + param
+                    + str(param)
                     + '".'
                 )
                 sys.exit(1)
@@ -189,7 +196,9 @@ class Config:
         # Return configuration
         return new_config
 
-    def _extract_param_from_config(self, template: dict, data, param_name: str):
+    def _extract_param_from_config(
+        self, template: dict[str, Any], data: Any, param_name: str
+    ) -> Any:
         """
         Extracts a parameter value from a configuration template based on the specified parameter name.
 
@@ -208,12 +217,14 @@ class Config:
             or the provided data itself if no sub-parameter check is necessary.
         """
         if "sub_params" in template[param_name]:
-            return self._configuration_check(template[param_name]["sub_params"], data)
+            return self._configuration_check(
+                dict(template[param_name]["sub_params"]), dict(data)
+            )
         else:
-            new_data = self._replace_param_by_env_var_in_str(data)
+            new_data: Any = self._replace_param_by_env_var_in_str(data)
             return new_data
 
-    def _add_params_from_template(self, config):
+    def _add_params_from_template(self, config: dict[str, Any]) -> dict[str, Any]:
         """
         Adds parameters from a specified template file to the configuration if the template is
         enabled in the given configuration dictionary.
@@ -230,32 +241,34 @@ class Config:
         :rtype: dict
         """
         if constants.USE_TEMPLATE in config:
-            template_file = config[constants.USE_TEMPLATE]
+            template_file: Any = config[constants.USE_TEMPLATE]
             template_full_file = os.path.join(
                 os.path.dirname(os.path.realpath(__file__)),
                 "..",
                 constants.TEMPLATES_DIR,
-                template_file + ".yaml",
+                str(template_file) + ".yaml",
             )
             if os.path.isfile(template_full_file):
                 self._logger.info(
-                    'Using template "' + template_file + '" for configuration.'
+                    'Using template "' + str(template_file) + '" for configuration.'
                 )
 
                 # Get template configuration
                 with open(template_full_file, "r") as file:
-                    template_config = yaml.load(file, Loader=yaml.SafeLoader)
+                    template_config: dict[str, Any] = yaml.load(
+                        file, Loader=yaml.SafeLoader
+                    )
 
                 # Add keys from project config into the template
                 for key in config:
                     if key not in [constants.PROJECT_VARS, constants.USE_TEMPLATE]:
-                        template_config[key] = config[key]
+                        template_config[str(key)] = config[key]
 
                 return template_config
             else:
                 self._logger.error(
                     'Template "'
-                    + template_file
+                    + str(template_file)
                     + "\" doesn't exist in the templates directory."
                 )
                 sys.exit(1)
@@ -263,7 +276,7 @@ class Config:
         else:
             return config
 
-    def _replace_param_by_env_var_in_str(self, base_str: str):
+    def _replace_param_by_env_var_in_str(self, base_str: Any) -> Any:
         """
         Replaces placeholders for environment variables in the input string with their
         corresponding values from the `self.env_vars` dictionary. Placeholders are
@@ -280,13 +293,15 @@ class Config:
         """
         if isinstance(base_str, str) and "$" in base_str:
 
-            def replace_func(match):
+            def replace_func(match: re.Match[str]) -> str:
                 var_name = match.group(1)
                 if var_name in self.env_vars:
                     return self.env_vars[var_name]
                 else:
                     self._logger.error(
-                        'Error: Environment variable "' + var_name + '" is not defined.'
+                        'Error: Environment variable "'
+                        + str(var_name)
+                        + '" is not defined.'
                     )
                     sys.exit(1)
 

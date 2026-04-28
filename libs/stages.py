@@ -4,12 +4,13 @@ import shlex
 import shutil
 import subprocess
 from logging import Logger
+from typing import Any
 
 import libs.constants as constants
 
 
 def execute_stages(
-    stages: list,
+    stages: list[dict[str, Any]],
     artifacts_enabled: bool | None,
     continue_if_fail: bool,
     logger: Logger,
@@ -53,7 +54,7 @@ def execute_stages(
     """
     logger.info("")
 
-    if stages is None or len(stages) == 0:
+    if not stages:
         logger.warning("No stage to execute")
         return True
 
@@ -69,7 +70,7 @@ def execute_stages(
             logger.info(f"   Executing command: {command}")
             try:
                 result = subprocess.run(
-                    shlex.split(command),
+                    shlex.split(str(command)),
                     shell=False,
                     check=True,
                     text=True,
@@ -78,8 +79,8 @@ def execute_stages(
                 )
                 if disp_output:
                     logger.info("Command output:")
-                    logger.info(result.stdout)
-                    logger.info(result.stderr)
+                    logger.info(str(result.stdout))
+                    logger.info(str(result.stderr))
 
                 if save_output:
                     with open(
@@ -88,10 +89,10 @@ def execute_stages(
                         ),
                         "a",
                     ) as f:
-                        f.write(f">>> {command}\n")
-                        f.write(result.stdout)
-                        f.write(result.stderr)
-                        f.write("\n")
+                        _ = f.write(f">>> {command}\n")
+                        _ = f.write(str(result.stdout))
+                        _ = f.write(str(result.stderr))
+                        _ = f.write("\n")
 
             except subprocess.CalledProcessError as e:
                 logger.error(
@@ -100,14 +101,14 @@ def execute_stages(
                 if save_output:
                     with open(
                         os.path.join(
-                            "..", constants.ARTIFACTS, f"{stage[constants.NAME]}.txt"
+                            "..", constants.LOGS, f"{stage[constants.NAME]}.txt"
                         ),
                         "a",
                     ) as f:
                         if e.stdout:
-                            f.write(e.stdout)
+                            _ = f.write(str(e.stdout))
                         if e.stderr:
-                            f.write(e.stderr)
+                            _ = f.write(str(e.stderr))
                 if continue_if_fail:
                     continue
                 else:
@@ -117,79 +118,78 @@ def execute_stages(
         # Artifacts
         ###########
         if constants.ARTIFACTS in stage:
-            process_artifacts = (
+            process_artifacts: bool = (
                 artifacts_enabled
                 if artifacts_enabled is not None
-                else stage[constants.ARTIFACTS][constants.ENABLED]
+                else bool(stage[constants.ARTIFACTS][constants.ENABLED])
             )
             if process_artifacts:
                 logger.info("   Retrieving artifacts...")
                 for i, path in enumerate(stage[constants.ARTIFACTS][constants.PATHS]):
-                    artifact_path = path
+                    artifact_path: str = str(path)
                     # Get artifact full path
-                    if "*" in path:
-                        matching_files = glob.glob(path, recursive=True)
+                    if "*" in artifact_path:
+                        matching_files = glob.glob(artifact_path, recursive=True)
                         if len(matching_files) == 1:
-                            artifact_path = matching_files[0]
+                            artifact_path = str(matching_files[0])
                         elif len(matching_files) > 1:
                             logger.error(
-                                f"   Error : Multiple artifacts found for path: {path}"
+                                f"   Error : Multiple artifacts found for path: {artifact_path}"
                             )
                             return False
                         else:
                             logger.error(
-                                f"   Error : No artifact found for path: {path}"
+                                f"   Error : No artifact found for path: {artifact_path}"
                             )
                             return False
 
                     # Check if artifact is a file or a folder
-                    if os.path.isdir(artifact_path):
-                        artifact_isdir = True
-                    else:
-                        artifact_isdir = False
+                    artifact_isdir = os.path.isdir(artifact_path)
 
                     ###############
                     # Copy artifact
                     ###############
-                    if artifact_path is not None:
-                        try:
-                            if artifact_isdir:
-                                shutil.copytree(
-                                    artifact_path,
-                                    os.path.join(
-                                        "..",
-                                        constants.ARTIFACTS,
-                                        os.path.basename(artifact_path),
-                                    ),
-                                )
-                            else:
-                                shutil.copy2(
-                                    artifact_path,
-                                    os.path.join("..", constants.ARTIFACTS),
-                                )
-                            logger.info(f"   Copied artifact: {artifact_path}")
-                        except Exception as e:
-                            logger.error(
-                                f"   Error copying artifact {artifact_path} to 'artifacts': {e}"
+                    try:
+                        if artifact_isdir:
+                            _ = shutil.copytree(
+                                artifact_path,
+                                os.path.join(
+                                    "..",
+                                    constants.ARTIFACTS,
+                                    os.path.basename(artifact_path),
+                                ),
                             )
-                            return False
+                        else:
+                            _ = shutil.copy2(
+                                artifact_path,
+                                os.path.join("..", constants.ARTIFACTS),
+                            )
+                        logger.info(f"   Copied artifact: {artifact_path}")
+                    except Exception as e:
+                        logger.error(
+                            f"   Error copying artifact {artifact_path} to 'artifacts': {e}"
+                        )
+                        return False
 
                     ###################################################
                     # Compute file and directories names for next steps
                     ###################################################
                     original_name = os.path.basename(artifact_path)
-                    extension = (
+                    extension: str | None = (
                         original_name.split(".")[-1] if not artifact_isdir else None
                     )
+                    artifact_name: str
                     if constants.NAME in stage[constants.ARTIFACTS]:
-                        if len(stage[constants.ARTIFACTS][constants.PATHS]) > 1:
-                            artifact_name = (
+                        if len(list(stage[constants.ARTIFACTS][constants.PATHS])) > 1:
+                            artifact_name = str(
                                 stage[constants.ARTIFACTS][constants.NAME] + f"_{i + 1}"
                             )
                         else:
-                            artifact_name = stage[constants.ARTIFACTS][constants.NAME]
+                            artifact_name = str(
+                                stage[constants.ARTIFACTS][constants.NAME]
+                            )
                     else:
-                        artifact_name = original_name.split(".")[0]
+                        artifact_name = str(original_name.split(".")[0])
 
                     ################################################################################################
                     # Rename artifact
@@ -197,8 +197,8 @@ def execute_stages(
                     ################################################################################################
                     if (
                         constants.NAME in stage[constants.ARTIFACTS]
-                        and not stage[constants.ARTIFACTS][constants.ARCHIVE]
-                        and not stage[constants.ARTIFACTS][constants.ASSEMBLE]
+                        and not bool(stage[constants.ARTIFACTS][constants.ARCHIVE])
+                        and not bool(stage[constants.ARTIFACTS][constants.ASSEMBLE])
                     ):
                         new_name = artifact_name
                         if extension is not None:
@@ -223,12 +223,13 @@ def execute_stages(
                     #   -> Archive if archive is activated and assemble is not activated
                     #      or artifact is a directory
                     #########################################################################
-                    if not stage[constants.ARTIFACTS][constants.ASSEMBLE] and (
-                        stage[constants.ARTIFACTS][constants.ARCHIVE] or artifact_isdir
+                    if not bool(stage[constants.ARTIFACTS][constants.ASSEMBLE]) and (
+                        bool(stage[constants.ARTIFACTS][constants.ARCHIVE])
+                        or artifact_isdir
                     ):
                         try:
                             if artifact_isdir:
-                                shutil.make_archive(
+                                _ = shutil.make_archive(
                                     os.path.join(
                                         "..", constants.ARTIFACTS, artifact_name
                                     ),
@@ -246,13 +247,13 @@ def execute_stages(
                                     "..", constants.ARTIFACTS, artifact_name
                                 )
                                 os.mkdir(temp_dir)
-                                shutil.move(
+                                _ = shutil.move(
                                     os.path.join(
                                         "..", constants.ARTIFACTS, original_name
                                     ),
                                     temp_dir,
                                 )
-                                shutil.make_archive(
+                                _ = shutil.make_archive(
                                     temp_dir,
                                     "zip",
                                     os.path.join(
@@ -268,21 +269,21 @@ def execute_stages(
                 ####################
                 # Assemble artifacts
                 ####################
-                if stage[constants.ARTIFACTS][constants.ASSEMBLE]:
-                    archive_name = (
+                if bool(stage[constants.ARTIFACTS][constants.ASSEMBLE]):
+                    archive_name: str = str(
                         stage[constants.ARTIFACTS][constants.NAME]
                         if constants.NAME in stage[constants.ARTIFACTS]
                         else constants.ARTIFACTS
                     )
                     try:
-                        shutil.make_archive(
+                        _ = shutil.make_archive(
                             os.path.join("..", archive_name),
                             "zip",
                             os.path.join("..", constants.ARTIFACTS),
                         )
                         shutil.rmtree(os.path.join("..", constants.ARTIFACTS))
                         os.mkdir(os.path.join("..", constants.ARTIFACTS))
-                        shutil.move(
+                        _ = shutil.move(
                             os.path.join("..", archive_name + ".zip"),
                             os.path.join("..", constants.ARTIFACTS),
                         )
@@ -294,7 +295,7 @@ def execute_stages(
             else:
                 logger.info("   Skipping artifacts generation")
 
-        logger.info("Stage " + stage[constants.NAME] + " executed successfully")
+        logger.info("Stage " + str(stage[constants.NAME]) + " executed successfully")
 
     logger.info("")
     logger.info("All stages executed successfully")

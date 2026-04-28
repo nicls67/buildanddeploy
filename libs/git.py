@@ -1,34 +1,35 @@
 import re
-from urllib.parse import urlparse
+from typing import Any
+from urllib.parse import ParseResult, urlparse
 
 from git import Repo
 
 from libs import constants
 
 
-def is_valid_git_url(url: str) -> bool:
+def is_valid_git_url(url: Any) -> bool:
     """
     Validates a Git repository URL to prevent argument injection and SSRF.
 
     :param url: The Git repository URL to validate.
-    :type url: str
+    :type url: Any
     :return: True if the URL is valid and safe, False otherwise.
     :rtype: bool
     """
     if not isinstance(url, str):
         return False
 
-    url = url.strip()
-    if url.startswith("-"):
+    url_str: str = url.strip()
+    if url_str.startswith("-"):
         return False
 
-    if re.search(r"\s", url):
+    if re.search(r"\s", url_str):
         return False
 
-    parsed = urlparse(url)
+    parsed: ParseResult = urlparse(url_str)
     allowed_schemes = {"http", "https", "git", "ssh"}
 
-    if parsed.scheme in allowed_schemes:
+    if str(parsed.scheme) in allowed_schemes:
         return True
 
     # Check for SCP-like syntax (e.g. git@github.com:user/repo.git)
@@ -36,16 +37,16 @@ def is_valid_git_url(url: str) -> bool:
     scp_pattern = re.compile(r"^([a-zA-Z0-9_.\-]+@)?[a-zA-Z0-9_.\-]+:/?.*$")
 
     # Explicitly block known dangerous schemes parsed as such if scp matches
-    if parsed.scheme in {"file", "ext"}:
+    if str(parsed.scheme) in {"file", "ext"}:
         return False
 
-    if scp_pattern.match(url):
+    if scp_pattern.match(url_str):
         return True
 
     return False
 
 
-def clone_repo(config):
+def clone_repo(config: dict[str, Any]) -> Repo:
     """
     Clones a remote repository to a specified directory using the provided configuration.
 
@@ -59,14 +60,14 @@ def clone_repo(config):
     :raises git.exc.GitCommandError: If cloning the repository fails.
     :raises ValueError: If the configured repository URL is invalid or unsafe.
     """
-    repo_url = config[constants.GIT_REPOSITORY]
+    repo_url: Any = config[constants.GIT_REPOSITORY]
     if not is_valid_git_url(repo_url):
         raise ValueError(f"Invalid or unsafe Git repository URL: {repo_url}")
 
-    return Repo.clone_from(repo_url, constants.GIT)
+    return Repo.clone_from(str(repo_url), constants.GIT)
 
 
-def update_repo(repo, config):
+def update_repo(repo: Repo, config: dict[str, Any]) -> None:
     """
     Updates a local Git repository to match the desired state specified in the
     configuration. The update can be based on a specific commit, tag, or branch,
@@ -84,33 +85,34 @@ def update_repo(repo, config):
     :return: None
     :raises git.exc.GitCommandError: If updating the repository fails.
     """
-    repo.remotes.origin.fetch()
+    _ = repo.remotes.origin.fetch()
 
     # Discard all local changes
-    repo.git.reset("--hard")
+    _ = repo.git.reset("--hard")
 
     # Determine which reference to update to based on configuration
     if constants.GIT_COMMIT in config and config[constants.GIT_COMMIT]:
         # If a specific commit is specified, checkout that commit
-        repo.git.checkout(config[constants.GIT_COMMIT])
+        _ = repo.git.checkout(str(config[constants.GIT_COMMIT]))
     elif constants.GIT_TAG in config and config[constants.GIT_TAG]:
         # If a specific tag is specified, checkout that tag
-        repo.git.checkout(config[constants.GIT_TAG])
+        _ = repo.git.checkout(str(config[constants.GIT_TAG]))
     else:
         # Otherwise, use the configured branch
-        branch_name = config[constants.GIT_BRANCH]
+        branch_name: Any = config[constants.GIT_BRANCH]
+        branch_name_str = str(branch_name)
 
         # Check if a local branch exists
-        local_branch_exists = branch_name in (
+        local_branch_exists = branch_name_str in (
             ref.name.split("/")[-1] for ref in repo.heads
         )
 
         if not local_branch_exists:
             # Create a new local branch that tracks the remote branch
-            repo.git.checkout("-b", branch_name, "origin/" + branch_name)
+            _ = repo.git.checkout("-b", branch_name_str, "origin/" + branch_name_str)
         else:
             # Checkout the existing local branch
-            repo.git.checkout(branch_name)
+            _ = repo.git.checkout(branch_name_str)
 
         # Pull the latest changes
-        repo.remotes.origin.pull()
+        _ = repo.remotes.origin.pull()

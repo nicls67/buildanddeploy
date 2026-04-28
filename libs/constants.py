@@ -1,3 +1,5 @@
+from typing import Any
+
 GIT = "git"
 LOGS = "logs"
 CONFILE_FILE_NAME = "config.yaml"
@@ -24,7 +26,7 @@ ARCHIVE = "archive"
 ASSEMBLE = "assemble"
 STAGES = "stages"
 
-CONFIGURATION_PARAMS = {
+CONFIGURATION_PARAMS: dict[str, Any] = {
     GIT_REPOSITORY: {
         "mandatory": True,
     },

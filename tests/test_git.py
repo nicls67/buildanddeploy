@@ -1,10 +1,12 @@
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
-from libs.git import clone_repo, update_repo, is_valid_git_url
+
 from libs import constants
+from libs.git import clone_repo, is_valid_git_url, update_repo
 
 
-def test_is_valid_git_url_valid():
+def test_is_valid_git_url_valid() -> None:
     valid_urls = [
         "https://github.com/user/repo.git",
         "http://github.com/user/repo.git",
@@ -18,7 +20,7 @@ def test_is_valid_git_url_valid():
         assert is_valid_git_url(url) is True
 
 
-def test_is_valid_git_url_invalid():
+def test_is_valid_git_url_invalid() -> None:
     invalid_urls = [
         "-c core.askpass=echo",
         "--upload-pack=touch /tmp/pwned",
@@ -35,7 +37,7 @@ def test_is_valid_git_url_invalid():
 
 
 @patch("libs.git.Repo.clone_from")
-def test_clone_repo_valid_url(mock_clone_from):
+def test_clone_repo_valid_url(mock_clone_from: MagicMock) -> None:
     config = {constants.GIT_REPOSITORY: "https://example.com/repo.git"}
     mock_repo = MagicMock()
     mock_clone_from.return_value = mock_repo
@@ -49,17 +51,17 @@ def test_clone_repo_valid_url(mock_clone_from):
 
 
 @patch("libs.git.Repo.clone_from")
-def test_clone_repo_invalid_url(mock_clone_from):
+def test_clone_repo_invalid_url(mock_clone_from: MagicMock) -> None:
     config = {constants.GIT_REPOSITORY: "--upload-pack=touch /tmp/pwned"}
 
     with pytest.raises(ValueError) as excinfo:
-        clone_repo(config)
+        _ = clone_repo(config)
 
     assert "Invalid or unsafe Git repository URL" in str(excinfo.value)
     mock_clone_from.assert_not_called()
 
 
-def test_update_repo_with_commit():
+def test_update_repo_with_commit() -> None:
     config = {constants.GIT_COMMIT: "abcdef1234567890"}
     mock_repo = MagicMock()
     mock_repo.heads = []
@@ -71,7 +73,7 @@ def test_update_repo_with_commit():
     mock_repo.git.checkout.assert_called_with("abcdef1234567890")
 
 
-def test_update_repo_with_branch():
+def test_update_repo_with_branch() -> None:
     config = {constants.GIT_BRANCH: "develop"}
     mock_repo = MagicMock()
     mock_ref = MagicMock()
