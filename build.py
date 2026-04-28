@@ -1,18 +1,19 @@
+# pyright: reportAny=false, reportExplicitAny=false
 import os
 import shutil
 import sys
 
-from git import Repo, GitCommandError, InvalidGitRepositoryError
+from git import GitCommandError, InvalidGitRepositoryError, Repo
 
 import libs.constants as constants
 from libs.config import Config
 from libs.git import clone_repo, update_repo
 from libs.logging import configure_logging
 from libs.stages import execute_stages
-from version import BUILD_AND_DEPLOY_VER
+from version import APP_DESCRIPTION, APP_HELP, APP_NAME, BUILD_AND_DEPLOY_VER
 
 
-def display_help():
+def display_help() -> None:
     """
     Displays help information for the BuildAndDeploy tool.
 
@@ -24,14 +25,9 @@ def display_help():
     :rtype: None
     :return: Does not return any value.
     """
-    print("BuildAndDeploy version " + BUILD_AND_DEPLOY_VER + "\n")
-    print("This tool builds and deploys your project\n")
-    print("Usage: build.py <working_directory>\n")
-    print("Arguments:")
-    print(
-        "  <working_directory>  Path to the directory to be used as the working directory."
-    )
-    print("  -h, --help           Display this help message and exit.")
+    print(APP_NAME + " version " + BUILD_AND_DEPLOY_VER + "\n")
+    print(f"{APP_DESCRIPTION}\n")
+    print(APP_HELP)
 
 
 ######################################
@@ -54,6 +50,7 @@ else:
 # Create logger
 logger = configure_logging(working_dir)
 
+logger.info(f"{APP_NAME} version {BUILD_AND_DEPLOY_VER}")
 logger.info("Working directory is set to: " + working_dir)
 logger.info("")
 
@@ -64,11 +61,12 @@ os.chdir(working_dir)
 build_config = Config(logger)
 
 # Clone Git repository
+git_repo: Repo
 if not os.path.isdir(constants.GIT):
     os.makedirs(constants.GIT, exist_ok=True)
     logger.info(
         "Cloning repository "
-        + build_config.config[constants.GIT_REPOSITORY].split("/")[-1]
+        + str(build_config.config[constants.GIT_REPOSITORY]).split("/")[-1]
         + "..."
     )
 
@@ -97,13 +95,18 @@ else:
         sys.exit(1)
 
 # Update Git repository
-logger.info("Updating repository " + git_repo.remotes.origin.url)
+logger.info("Updating repository " + str(git_repo.remotes.origin.url))
 update_repo(git_repo, build_config.config)
 
 # Create artifacts directory
 if os.path.isdir(constants.ARTIFACTS):
     shutil.rmtree(constants.ARTIFACTS)
 os.mkdir(constants.ARTIFACTS)
+
+# Create logs directory
+if os.path.isdir(constants.LOGS):
+    shutil.rmtree(constants.LOGS)
+os.mkdir(constants.LOGS)
 
 # Check global artifacts activation
 enable_artifacts: bool | None = None
@@ -114,11 +117,12 @@ elif build_config.config[constants.DISABLE_ARTIFACTS]:
 
 # Execute build stages
 result = execute_stages(
-    build_config.config[constants.STAGES],
+    list(build_config.config[constants.STAGES]),
     enable_artifacts,
-    build_config.config[constants.CONTINUE_ON_FAILURE],
+    bool(build_config.config[constants.CONTINUE_ON_FAILURE]),
     logger,
-    build_config.config[constants.DISPLAY_PIPELINE_OUTPUT],
+    bool(build_config.config[constants.DISPLAY_PIPELINE_OUTPUT]),
+    bool(build_config.config[constants.SAVE_PIPELINE_OUTPUT]),
 )
 
 # Logging

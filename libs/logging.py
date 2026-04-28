@@ -1,8 +1,9 @@
+# pyright: reportAny=false, reportExplicitAny=false
 import logging
 import os.path
 
 
-def configure_logging(working_dir: str):
+def configure_logging(working_dir: str) -> logging.Logger:
     """
     Configures a logger for the application that writes log messages to both a file and the console.
 

@@ -1,12 +1,9 @@
 # Global configuration
 display_pipeline_output: false
-generate_artifacts: false
-disable_artifacts: false
+save_pipeline_output: true
 continue_on_failure: false
 
 # Build stages
 stages:
   - use_template: rust_build
   - use_template: rust_test
-
-
