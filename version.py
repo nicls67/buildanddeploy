@@ -1,4 +1,4 @@
-BUILD_AND_DEPLOY_VER = "0.3.1"
+BUILD_AND_DEPLOY_VER = "0.3.2"
 """Tool version"""
 
 APP_NAME = "BuildAndDeploy"
