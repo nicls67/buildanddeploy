@@ -9,7 +9,7 @@ from libs.config import Config
 from libs.git import clone_repo, update_repo
 from libs.logging import configure_logging
 from libs.stages import execute_stages
-from version import BUILD_AND_DEPLOY_VER
+from version import APP_DESCRIPTION, APP_HELP, APP_NAME, BUILD_AND_DEPLOY_VER
 
 
 def display_help() -> None:
@@ -24,14 +24,9 @@ def display_help() -> None:
     :rtype: None
     :return: Does not return any value.
     """
-    print("BuildAndDeploy version " + BUILD_AND_DEPLOY_VER + "\n")
-    print("This tool builds and deploys your project\n")
-    print("Usage: build.py <working_directory>\n")
-    print("Arguments:")
-    print(
-        "  <working_directory>  Path to the directory to be used as the working directory."
-    )
-    print("  -h, --help           Display this help message and exit.")
+    print(APP_NAME + " version " + BUILD_AND_DEPLOY_VER + "\n")
+    print(f"{APP_DESCRIPTION}\n")
+    print(APP_HELP)
 
 
 ######################################
@@ -54,6 +49,7 @@ else:
 # Create logger
 logger = configure_logging(working_dir)
 
+logger.info(f"{APP_NAME} version {BUILD_AND_DEPLOY_VER}")
 logger.info("Working directory is set to: " + working_dir)
 logger.info("")
 

@@ -3,10 +3,12 @@ import os
 import shlex
 import shutil
 import subprocess
+from datetime import datetime
 from logging import Logger
 from typing import Any
 
 import libs.constants as constants
+from version import APP_NAME, BUILD_AND_DEPLOY_VER
 
 
 def execute_stages(
@@ -89,6 +91,10 @@ def execute_stages(
                         ),
                         "a",
                     ) as f:
+                        _ = f.write(f"{APP_NAME} version {BUILD_AND_DEPLOY_VER}\n")
+                        _ = f.write(
+                            f"Started {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}\n\n"
+                        )
                         _ = f.write(f">>> {command}\n")
                         _ = f.write(str(result.stdout))
                         _ = f.write(str(result.stderr))
